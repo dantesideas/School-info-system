@@ -10,7 +10,7 @@ const checkUser = async () => {
     window.location.href = "login.html";
   }
 };
-checkUser();
+//checkUser();
 "use strict";
 
 /* =========================================================
