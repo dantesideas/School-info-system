@@ -560,7 +560,11 @@ async function startDashboard() {
     }
 }
 
-
+// Logout Function
+async function logoutUser() {
+  await supabase.auth.signOut();
+  window.location.href = "login.html";
+}
 /* =========================================================
    PAGE START
 ========================================================= */
