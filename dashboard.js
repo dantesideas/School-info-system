@@ -1,3 +1,12 @@
+// Check if user is logged in
+const checkUser = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    // If not logged in, kick them back to login
+    window.location.href = "login.html";
+  }
+};
+checkUser();
 "use strict";
 
 /* =========================================================
