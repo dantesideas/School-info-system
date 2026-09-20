@@ -1,3 +1,7 @@
+async function logoutUser() {
+  await supabase.auth.signOut();
+  window.location.href = "login.html";
+}
 // Check if user is logged in
 const checkUser = async () => {
   const { data: { session } } = await supabase.auth.getSession();
