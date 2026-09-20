@@ -1,0 +1,1075 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Teachers - School Information System</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><header class="topbar"><div>
+
+    <h1>My School</h1>
+
+    <p>School Information System</p>
+
+</div>
+
+
+<button
+    type="button"
+    onclick="goBack()">
+
+    ←
+
+</button>
+
+</header><nav class="main-menu"><a href="dashboard.html">
+    🏠 Dashboard
+</a>
+
+<a href="students.html">
+    👨‍🎓 Students
+</a>
+
+<a
+    href="teachers.html"
+    class="active">
+
+    👨‍🏫 Teachers
+
+</a>
+
+<a href="classes.html">
+    🏫 Classes
+</a>
+
+<a href="subjects.html">
+    📚 Subjects
+</a>
+
+<a href="attendance.html">
+    📋 Attendance
+</a>
+
+<a href="exams.html">
+    📝 Exams & Marks
+</a>
+
+<a href="fees.html">💰 Fees</a>
+
+<a href="reports.html">
+    📊 Reports
+</a>
+
+<a href="#">
+    ⚙️ Settings
+</a>
+
+</nav><main><section class="welcome"><h2>👨‍🏫 Teacher Management</h2>
+
+<p>
+    Add, edit, search and manage teachers.
+</p>
+
+</section><!-- =====================================================
+     ADD / EDIT TEACHER
+===================================================== --><section class="teacher-form"><h3 id="formTitle">
+    ➕ Add Teacher
+</h3>
+
+
+<form id="teacherForm">
+
+
+    <input
+        type="hidden"
+        id="teacherId"
+    >
+
+
+    <label for="teacherName">
+        Teacher Name
+    </label>
+
+
+    <input
+        type="text"
+        id="teacherName"
+        placeholder="Enter teacher's full name"
+        required
+    >
+
+
+    <label for="teacherPhone">
+        Phone Number
+    </label>
+
+
+    <input
+        type="tel"
+        id="teacherPhone"
+        placeholder="Example: 0712345678"
+    >
+
+
+    <label for="teacherSubject">
+        Subject
+    </label>
+
+
+    <input
+        type="text"
+        id="teacherSubject"
+        placeholder="Example: English"
+    >
+
+
+    <button
+        type="submit"
+        class="save-btn"
+        id="saveButton">
+
+        ➕ Add Teacher
+
+    </button>
+
+
+    <button
+        type="button"
+        id="cancelButton"
+        style="display:none;">
+
+        Cancel Edit
+
+    </button>
+
+
+</form>
+
+
+<p id="formMessage"></p>
+
+</section><!-- =====================================================
+     SEARCH
+===================================================== --><section class="teacher-form"><h3>
+    🔍 Search Teachers
+</h3>
+
+
+<input
+    type="search"
+    id="searchTeacher"
+    placeholder="Search by name, phone or subject..."
+>
+
+</section><!-- =====================================================
+     TEACHER LIST
+===================================================== --><section class="teacher-list"><h3>
+    👨‍🏫 Teachers
+</h3>
+
+
+<div id="teachersContainer">
+
+    Loading teachers...
+
+</div>
+
+</section></main><script>
+
+
+/* =====================================================
+   SUPABASE CONFIGURATION
+===================================================== */
+
+const SUPABASE_URL =
+    "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+
+const SUPABASE_ANON_KEY =
+    "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+
+let supabaseClient =
+    null;
+
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let allTeachers = [];
+
+
+
+/* =====================================================
+   INITIALIZE SUPABASE
+===================================================== */
+
+try {
+
+    if (
+        !window.supabase ||
+        !window.supabase.createClient
+    ) {
+
+        throw new Error(
+            "Supabase library failed to load."
+        );
+
+    }
+
+
+    supabaseClient =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+        );
+
+}
+
+catch (error) {
+
+    console.error(
+        "SUPABASE INITIALIZATION ERROR:",
+        error
+    );
+
+}
+
+
+
+/* =====================================================
+   BACK
+===================================================== */
+
+function goBack() {
+
+    window.history.back();
+
+}
+
+
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+function showMessage(
+    message,
+    success = true
+) {
+
+    const box =
+        document.getElementById(
+            "formMessage"
+        );
+
+
+    if (!box) {
+
+        return;
+
+    }
+
+
+    box.textContent =
+        message;
+
+
+    box.style.color =
+        success
+            ? "green"
+            : "red";
+
+}
+
+
+
+/* =====================================================
+   LOAD TEACHERS
+===================================================== */
+
+async function loadTeachers() {
+
+    const container =
+        document.getElementById(
+            "teachersContainer"
+        );
+
+
+    container.innerHTML =
+        "<p>Loading teachers...</p>";
+
+
+    try {
+
+        const result =
+            await supabaseClient
+                .from("teachers")
+                .select(
+                    "id,name,phone,subject,created_at"
+                )
+                .order(
+                    "name",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        allTeachers =
+            result.data || [];
+
+
+        displayTeachers(
+            allTeachers
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "TEACHER LOAD ERROR:",
+            error
+        );
+
+
+        container.innerHTML = `
+
+            <div style="
+                padding:20px;
+                text-align:center;
+            ">
+
+                <h3 style="color:red;">
+                    Unable to load teachers
+                </h3>
+
+                <p>
+                    ${escapeHTML(
+                        error.message
+                    )}
+                </p>
+
+
+                <button
+                    type="button"
+                    onclick="loadTeachers()">
+
+                    🔄 Try Again
+
+                </button>
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+
+/* =====================================================
+   DISPLAY TEACHERS
+===================================================== */
+
+function displayTeachers(
+    teachers
+) {
+
+    const container =
+        document.getElementById(
+            "teachersContainer"
+        );
+
+
+    if (
+        !teachers ||
+        teachers.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div style="
+                padding:25px;
+                text-align:center;
+            ">
+
+                <h3>
+                    👨‍🏫 No teachers found
+                </h3>
+
+                <p>
+                    Add your first teacher above.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        "";
+
+
+    teachers.forEach(
+        function(teacher) {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "teacher-card";
+
+
+            card.innerHTML = `
+
+                <h4>
+
+                    👨‍🏫
+                    ${escapeHTML(
+                        teacher.name
+                    )}
+
+                </h4>
+
+
+                <p>
+
+                    <strong>
+                        📞 Phone:
+                    </strong>
+
+                    ${escapeHTML(
+                        teacher.phone ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <p>
+
+                    <strong>
+                        📚 Subject:
+                    </strong>
+
+                    ${escapeHTML(
+                        teacher.subject ||
+                        "N/A"
+                    )}
+
+                </p>
+
+
+                <button
+                    type="button"
+                    onclick="editTeacher(${teacher.id})">
+
+                    ✏️ Edit
+
+                </button>
+
+
+                <button
+                    type="button"
+                    onclick="deleteTeacher(${teacher.id})">
+
+                    🗑️ Delete
+
+                </button>
+
+            `;
+
+
+            container.appendChild(
+                card
+            );
+
+        }
+    );
+
+}
+
+
+
+/* =====================================================
+   ADD / UPDATE TEACHER
+===================================================== */
+
+document
+    .getElementById(
+        "teacherForm"
+    )
+    .addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+
+            const id =
+                document.getElementById(
+                    "teacherId"
+                ).value;
+
+
+            const name =
+                document.getElementById(
+                    "teacherName"
+                ).value.trim();
+
+
+            const phone =
+                document.getElementById(
+                    "teacherPhone"
+                ).value.trim();
+
+
+            const subject =
+                document.getElementById(
+                    "teacherSubject"
+                ).value.trim();
+
+
+            if (!name) {
+
+                showMessage(
+                    "Please enter the teacher's name.",
+                    false
+                );
+
+                return;
+
+            }
+
+
+            showMessage(
+                id
+                    ? "Updating teacher..."
+                    : "Saving teacher..."
+            );
+
+
+            try {
+
+                const teacherData = {
+
+                    name:
+                        name,
+
+                    phone:
+                        phone ||
+                        null,
+
+                    subject:
+                        subject ||
+                        null
+
+                };
+
+
+                let result;
+
+
+                if (id) {
+
+                    result =
+                        await supabaseClient
+                            .from("teachers")
+                            .update(
+                                teacherData
+                            )
+                            .eq(
+                                "id",
+                                id
+                            );
+
+                }
+
+                else {
+
+                    result =
+                        await supabaseClient
+                            .from("teachers")
+                            .insert([
+                                teacherData
+                            ]);
+
+                }
+
+
+                if (result.error) {
+
+                    throw result.error;
+
+                }
+
+
+                showMessage(
+                    id
+                        ? "Teacher updated successfully! ✓"
+                        : "Teacher added successfully! ✓"
+                );
+
+
+                cancelEdit();
+
+
+                await loadTeachers();
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "SAVE TEACHER ERROR:",
+                    error
+                );
+
+
+                showMessage(
+                    "Error saving teacher: " +
+                    error.message,
+                    false
+                );
+
+            }
+
+        }
+    );
+
+
+
+/* =====================================================
+   EDIT TEACHER
+===================================================== */
+
+function editTeacher(
+    id
+) {
+
+    const teacher =
+        allTeachers.find(
+            function(item) {
+
+                return String(
+                    item.id
+                ) ===
+                String(
+                    id
+                );
+
+            }
+        );
+
+
+    if (!teacher) {
+
+        alert(
+            "Teacher not found."
+        );
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "teacherId"
+    ).value =
+        teacher.id;
+
+
+    document.getElementById(
+        "teacherName"
+    ).value =
+        teacher.name ||
+        "";
+
+
+    document.getElementById(
+        "teacherPhone"
+    ).value =
+        teacher.phone ||
+        "";
+
+
+    document.getElementById(
+        "teacherSubject"
+    ).value =
+        teacher.subject ||
+        "";
+
+
+    document.getElementById(
+        "formTitle"
+    ).textContent =
+        "✏️ Edit Teacher";
+
+
+    document.getElementById(
+        "saveButton"
+    ).textContent =
+        "Update Teacher";
+
+
+    document.getElementById(
+        "cancelButton"
+    ).style.display =
+        "block";
+
+
+    window.scrollTo({
+
+        top: 0,
+
+        behavior: "smooth"
+
+    });
+
+}
+
+
+
+/* =====================================================
+   CANCEL EDIT
+===================================================== */
+
+function cancelEdit() {
+
+    document
+        .getElementById(
+            "teacherForm"
+        )
+        .reset();
+
+
+    document
+        .getElementById(
+            "teacherId"
+        )
+        .value =
+        "";
+
+
+    document
+        .getElementById(
+            "formTitle"
+        ).textContent =
+        "➕ Add Teacher";
+
+
+    document
+        .getElementById(
+            "saveButton"
+        ).textContent =
+        "➕ Add Teacher";
+
+
+    document
+        .getElementById(
+            "cancelButton"
+        ).style.display =
+        "none";
+
+}
+
+
+
+/* =====================================================
+   CANCEL BUTTON
+===================================================== */
+
+document
+    .getElementById(
+        "cancelButton"
+    )
+    .addEventListener(
+        "click",
+        cancelEdit
+    );
+
+
+
+/* =====================================================
+   DELETE TEACHER
+===================================================== */
+
+async function deleteTeacher(
+    id
+) {
+
+    const teacher =
+        allTeachers.find(
+            function(item) {
+
+                return String(
+                    item.id
+                ) ===
+                String(
+                    id
+                );
+
+            }
+        );
+
+
+    if (!teacher) {
+
+        return;
+
+    }
+
+
+    const confirmed =
+        confirm(
+            "Delete " +
+            teacher.name +
+            "?\n\nThis cannot be undone."
+        );
+
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    showMessage(
+        "Deleting teacher..."
+    );
+
+
+    try {
+
+        const result =
+            await supabaseClient
+                .from("teachers")
+                .delete()
+                .eq(
+                    "id",
+                    id
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        showMessage(
+            "Teacher deleted successfully! ✓"
+        );
+
+
+        await loadTeachers();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "DELETE TEACHER ERROR:",
+            error
+        );
+
+
+        showMessage(
+            "Error deleting teacher: " +
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+document
+    .getElementById(
+        "searchTeacher"
+    )
+    .addEventListener(
+        "input",
+        function() {
+
+            const search =
+                this.value
+                    .toLowerCase()
+                    .trim();
+
+
+            if (!search) {
+
+                displayTeachers(
+                    allTeachers
+                );
+
+                return;
+
+            }
+
+
+            const filtered =
+                allTeachers.filter(
+                    function(teacher) {
+
+                        return (
+
+                            String(
+                                teacher.name ||
+                                ""
+                            )
+                            .toLowerCase()
+                            .includes(
+                                search
+                            )
+
+                            ||
+
+                            String(
+                                teacher.phone ||
+                                ""
+                            )
+                            .toLowerCase()
+                            .includes(
+                                search
+                            )
+
+                            ||
+
+                            String(
+                                teacher.subject ||
+                                ""
+                            )
+                            .toLowerCase()
+                            .includes(
+                                search
+                            )
+
+                        );
+
+                    }
+                );
+
+
+            displayTeachers(
+                filtered
+            );
+
+        }
+    );
+
+
+
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
+
+function escapeHTML(
+    value
+) {
+
+    return String(
+        value
+    )
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+
+/* =====================================================
+   START PAGE
+===================================================== */
+
+async function startPage() {
+
+    const container =
+        document.getElementById(
+            "teachersContainer"
+        );
+
+
+    if (!supabaseClient) {
+
+        container.innerHTML = `
+
+            <div style="
+                padding:20px;
+                text-align:center;
+            ">
+
+                <h3 style="color:red;">
+                    Supabase could not be initialized
+                </h3>
+
+                <p>
+                    Please check the Supabase
+                    configuration.
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    await loadTeachers();
+
+}
+
+
+startPage();
+
+</script></body>
+</html>

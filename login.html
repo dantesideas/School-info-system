@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Login - School Information System</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="login-container">
+
+        <div class="login-box">
+
+            <h1>School Information System</h1>
+
+            <div class="subtitle">
+                Administrator Login
+            </div>
+
+
+            <form id="loginForm">
+
+                <label for="email">
+                    Email
+                </label>
+
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter your email"
+                    required
+                    autocomplete="email"
+                >
+
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Enter your password"
+                    required
+                    autocomplete="current-password"
+                >
+
+
+                <button
+                    type="submit"
+                    id="loginButton"
+                >
+                    Login
+                </button>
+
+            </form>
+
+
+            <div id="message"></div>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+"use strict";
+
+
+// =====================================================
+// SUPABASE CONFIGURATION
+// =====================================================
+
+const SUPABASE_URL =
+    "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+
+const db =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+// =====================================================
+// FORCE FRESH LOGIN
+// =====================================================
+//
+// IMPORTANT:
+// We DO NOT check for an existing session here.
+//
+// If an old Supabase session exists, it is removed.
+// Therefore login.html will ALWAYS remain on the
+// login screen until the user enters valid credentials.
+// =====================================================
+
+async function prepareLoginPage() {
+
+    try {
+
+        const {
+            data,
+            error
+        } = await db.auth.getSession();
+
+
+        if (error) {
+
+            console.error(
+                "Session check error:",
+                error
+            );
+
+            return;
+
+        }
+
+
+        // If an old session exists, sign it out.
+        if (data.session) {
+
+            await db.auth.signOut();
+
+            console.log(
+                "Previous session cleared."
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Error preparing login page:",
+            error
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// LOGIN
+// =====================================================
+
+async function loginUser(event) {
+
+    event.preventDefault();
+
+
+    const email =
+        document
+            .getElementById("email")
+            .value
+            .trim();
+
+
+    const password =
+        document
+            .getElementById("password")
+            .value;
+
+
+    const button =
+        document.getElementById(
+            "loginButton"
+        );
+
+
+    const message =
+        document.getElementById(
+            "message"
+        );
+
+
+    button.disabled = true;
+
+    button.textContent =
+        "Logging in...";
+
+    message.textContent = "";
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await db.auth.signInWithPassword({
+
+            email: email,
+
+            password: password
+
+        });
+
+
+        // -------------------------------------------------
+        // INVALID LOGIN
+        // -------------------------------------------------
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        // -------------------------------------------------
+        // MAKE SURE SESSION EXISTS
+        // -------------------------------------------------
+
+        if (!data.session) {
+
+            throw new Error(
+                "Login succeeded but no session was created."
+            );
+
+        }
+
+
+        // -------------------------------------------------
+        // SUCCESS
+        // -------------------------------------------------
+
+        message.style.color =
+            "green";
+
+        message.textContent =
+            "Login successful. Opening dashboard...";
+
+
+        setTimeout(function() {
+
+            window.location.replace(
+                "dashboard.html"
+            );
+
+        }, 500);
+
+
+    } catch (error) {
+
+        console.error(
+            "LOGIN ERROR:",
+            error
+        );
+
+
+        message.style.color =
+            "red";
+
+
+        if (
+            error.message &&
+            error.message
+                .toLowerCase()
+                .includes(
+                    "email not confirmed"
+                )
+        ) {
+
+            message.textContent =
+                "Your email has not been confirmed. Confirm the user in Supabase Authentication.";
+
+        } else {
+
+            message.textContent =
+                error.message ||
+                "Invalid email or password.";
+
+        }
+
+
+        button.disabled = false;
+
+        button.textContent =
+            "Login";
+
+    }
+
+}
+
+
+// =====================================================
+// START LOGIN PAGE
+// =====================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async function() {
+
+        // Clear any previous Supabase session.
+        await prepareLoginPage();
+
+
+        // Connect login form.
+        document
+            .getElementById("loginForm")
+            .addEventListener(
+                "submit",
+                loginUser
+            );
+
+    }
+);
+
+</script>
+
+</body>
+
+</html>

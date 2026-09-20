@@ -1,0 +1,1726 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Fees - School Information System</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: #f1f5f9;
+    color: #1e293b;
+    min-height: 100vh;
+}
+
+html:not(.authenticated) body {
+    visibility: hidden;
+}
+
+
+/* =====================================================
+   TOPBAR
+===================================================== */
+
+.topbar {
+    background: #0f172a;
+    color: white;
+    padding: 15px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    border-bottom: 4px solid #3b82f6;
+}
+
+.topbar h1 {
+    font-size: 24px;
+}
+
+.topbar p {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-email {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+#logoutButton {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 9px 15px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#logoutButton:hover {
+    background: #b91c1c;
+}
+
+#logoutButton:disabled {
+    opacity: 0.6;
+}
+
+
+/* =====================================================
+   NAVIGATION
+===================================================== */
+
+.main-menu {
+    background: white;
+    padding: 12px 25px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.main-menu a {
+    text-decoration: none;
+    color: #475569;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 6px 0;
+    border-bottom: 3px solid transparent;
+}
+
+.main-menu a:hover {
+    color: #2563eb;
+}
+
+.main-menu a.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+
+/* =====================================================
+   MAIN
+===================================================== */
+
+main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 30px 20px;
+}
+
+.welcome {
+    margin-bottom: 25px;
+}
+
+.welcome h2 {
+    font-size: 28px;
+    color: #0f172a;
+}
+
+.welcome p {
+    color: #64748b;
+    margin-top: 5px;
+}
+
+
+/* =====================================================
+   CARDS
+===================================================== */
+
+.card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+}
+
+.card h3 {
+    margin-bottom: 18px;
+    color: #0f172a;
+}
+
+
+/* =====================================================
+   FORM
+===================================================== */
+
+label {
+    display: block;
+    margin-top: 13px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    font-size: 15px;
+    background: #f8fafc;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+
+.save-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px;
+    border: none;
+    border-radius: 9px;
+    background: #2563eb;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.save-btn:hover {
+    background: #1d4ed8;
+}
+
+.save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.cancel-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border: none;
+    border-radius: 9px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+    cursor: pointer;
+    display: none;
+}
+
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+#message {
+    display: none;
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+#searchFee {
+    width: 100%;
+}
+
+
+/* =====================================================
+   FEE RECORD
+===================================================== */
+
+.fee-record {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.fee-record h4 {
+    color: #0f172a;
+    font-size: 19px;
+    margin-bottom: 10px;
+}
+
+.fee-record p {
+    margin: 5px 0;
+    color: #475569;
+}
+
+.paid {
+    color: #16a34a;
+    font-weight: 700;
+}
+
+.unpaid {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.action-btn {
+    border: none;
+    padding: 8px 13px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 10px 6px 0 0;
+}
+
+.edit-btn {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.delete-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.action-btn:hover {
+    opacity: 0.8;
+}
+
+
+/* =====================================================
+   EMPTY / ERROR
+===================================================== */
+
+.empty {
+    text-align: center;
+    padding: 25px;
+    color: #64748b;
+}
+
+.error-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.success-box {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #15803d;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 700px) {
+
+    .topbar {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .topbar-right {
+        justify-content: center;
+    }
+
+    .main-menu {
+        justify-content: center;
+    }
+
+    main {
+        padding: 20px 12px;
+    }
+
+    .card {
+        padding: 18px;
+    }
+
+}
+
+</style><!-- =====================================================
+     AUTHENTICATION GUARD
+===================================================== --><script>
+
+"use strict";
+
+const SUPABASE_URL =
+    "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+    "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+
+const feesAuthClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+(async function protectFeesPage() {
+
+    try {
+
+        const {
+            data,
+            error
+        } = await feesAuthClient.auth.getSession();
+
+
+        if (error || !data.session) {
+
+            window.location.replace(
+                "login.html"
+            );
+
+            return;
+
+        }
+
+
+        document.documentElement
+            .classList.add("authenticated");
+
+
+    } catch (error) {
+
+        console.error(
+            "Authentication error:",
+            error
+        );
+
+        window.location.replace(
+            "login.html"
+        );
+
+    }
+
+})();
+
+</script></head><body><!-- =====================================================
+     TOPBAR
+===================================================== --><header class="topbar"><div>
+
+    <h1>
+        My School
+    </h1>
+
+    <p>
+        School Information System
+    </p>
+
+</div>
+
+
+<div class="topbar-right">
+
+    <span
+        id="userEmail"
+        class="user-email">
+        Loading...
+    </span>
+
+
+    <button
+        id="logoutButton"
+        type="button">
+
+        Logout
+
+    </button>
+
+</div>
+
+</header><!-- =====================================================
+     NAVIGATION
+===================================================== --><nav class="main-menu"><a href="dashboard.html">
+    🏠 Dashboard
+</a>
+
+<a href="students.html">
+    👨‍🎓 Students
+</a>
+
+<a href="teachers.html">
+    👨‍🏫 Teachers
+</a>
+
+<a href="classes.html">
+    🏫 Classes
+</a>
+
+<a href="subjects.html">
+    📚 Subjects
+</a>
+
+<a href="attendance.html">
+    📋 Attendance
+</a>
+
+<a href="exams.html">
+    📝 Exams & Marks
+</a>
+
+<a href="fees.html"
+   class="active">
+
+    💰 Fees
+
+</a>
+
+<a href="reports.html">
+    📊 Reports
+</a>
+
+</nav><!-- =====================================================
+     MAIN
+===================================================== --><main><section class="welcome"><h2>
+    💰 Fee Management
+</h2>
+
+<p>
+    Add, edit, search and manage student fee records.
+</p>
+
+</section><!-- =====================================================
+     ADD / EDIT FEE
+===================================================== --><section class="card"><h3 id="formTitle">
+    ➕ Add Fee Record
+</h3>
+
+
+<form id="feeForm">
+
+    <input
+        type="hidden"
+        id="feeId">
+
+
+    <label for="studentId">
+        Student
+    </label>
+
+    <select
+        id="studentId"
+        required>
+
+        <option value="">
+            Loading students...
+        </option>
+
+    </select>
+
+
+    <label for="amount">
+        Amount (KSh)
+    </label>
+
+    <input
+        type="number"
+        id="amount"
+        placeholder="Enter amount"
+        min="0"
+        step="0.01"
+        required>
+
+
+    <label for="dueDate">
+        Due Date
+    </label>
+
+    <input
+        type="date"
+        id="dueDate"
+        required>
+
+
+    <label for="paidDate">
+        Paid Date
+    </label>
+
+    <input
+        type="date"
+        id="paidDate">
+
+
+    <label for="description">
+        Description
+    </label>
+
+    <input
+        type="text"
+        id="description"
+        placeholder="e.g. Tuition, Transport, Lunch">
+
+
+    <button
+        type="submit"
+        class="save-btn"
+        id="saveButton">
+
+        ➕ Add Fee
+
+    </button>
+
+
+    <button
+        type="button"
+        class="cancel-btn"
+        id="cancelButton">
+
+        Cancel Edit
+
+    </button>
+
+</form>
+
+
+<div id="message"></div>
+
+</section><!-- =====================================================
+     SEARCH
+===================================================== --><section class="card"><h3>
+    🔍 Search Fees
+</h3>
+
+
+<input
+    type="search"
+    id="searchFee"
+    placeholder="Search by student, admission number, description or status...">
+
+</section><!-- =====================================================
+     FEE LIST
+===================================================== --><section class="card"><h3>
+    💰 Fee Records
+</h3>
+
+
+<div id="feesContainer">
+
+    Loading fee records...
+
+</div>
+
+</section></main><script>
+
+"use strict";
+
+
+/* =====================================================
+   SUPABASE
+===================================================== */
+
+const SUPABASE_URL_FEES =
+    "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+const SUPABASE_KEY_FEES =
+    "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+
+const dbFees =
+    window.supabase.createClient(
+        SUPABASE_URL_FEES,
+        SUPABASE_KEY_FEES
+    );
+
+
+let students = [];
+
+let fees = [];
+
+
+
+/* =====================================================
+   HTML ESCAPE
+===================================================== */
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+function showMessage(
+    message,
+    success
+) {
+
+    const element =
+        document.getElementById(
+            "message"
+        );
+
+
+    if (!element) return;
+
+
+    element.style.display =
+        "block";
+
+
+    element.textContent =
+        message;
+
+
+    if (success) {
+
+        element.className =
+            "success-box";
+
+    } else {
+
+        element.className =
+            "error-box";
+
+    }
+
+}
+
+
+
+/* =====================================================
+   FORMAT MONEY
+===================================================== */
+
+function formatMoney(amount) {
+
+    return "KSh " +
+        Number(amount || 0)
+            .toLocaleString(
+                "en-KE",
+                {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                }
+            );
+
+}
+
+
+
+/* =====================================================
+   LOAD STUDENTS
+===================================================== */
+
+async function loadStudents() {
+
+    const select =
+        document.getElementById(
+            "studentId"
+        );
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await dbFees
+            .from("students")
+            .select(
+                "id, name, admission_no"
+            )
+            .order(
+                "name",
+                {
+                    ascending: true
+                }
+            );
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        students =
+            data || [];
+
+
+        select.innerHTML =
+            '<option value="">Select student</option>';
+
+
+        students.forEach(
+            function(student) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    String(student.id);
+
+
+                option.textContent =
+                    student.name +
+                    " (" +
+                    (
+                        student.admission_no ||
+                        "No admission number"
+                    ) +
+                    ")";
+
+
+                select.appendChild(
+                    option
+                );
+
+            }
+        );
+
+
+        if (students.length === 0) {
+
+            select.innerHTML =
+                '<option value="">No students found</option>';
+
+            showMessage(
+                "Please add a student before recording a fee.",
+                false
+            );
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "LOAD STUDENTS ERROR:",
+            error
+        );
+
+
+        select.innerHTML =
+            '<option value="">Unable to load students</option>';
+
+
+        showMessage(
+            "Unable to load students: " +
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   GET STUDENT
+===================================================== */
+
+function getStudent(
+    studentId
+) {
+
+    return students.find(
+        function(student) {
+
+            return String(student.id) ===
+                String(studentId);
+
+        }
+    );
+
+}
+
+
+
+/* =====================================================
+   LOAD FEES
+===================================================== */
+
+async function loadFees() {
+
+    const container =
+        document.getElementById(
+            "feesContainer"
+        );
+
+
+    container.innerHTML =
+        "Loading fee records...";
+
+
+    try {
+
+        const {
+            data,
+            error
+        } = await dbFees
+            .from("fees")
+            .select("*")
+            .order(
+                "due_date",
+                {
+                    ascending: false
+                }
+            );
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        fees =
+            data || [];
+
+
+        displayFees(
+            fees
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "LOAD FEES ERROR:",
+            error
+        );
+
+
+        container.innerHTML = `
+            <div class="error-box">
+                <strong>Unable to load fees.</strong>
+                <p style="margin-top:8px;">
+                    ${escapeHTML(error.message)}
+                </p>
+            </div>
+        `;
+
+    }
+
+}
+
+
+
+/* =====================================================
+   DISPLAY FEES
+===================================================== */
+
+function displayFees(
+    records
+) {
+
+    const container =
+        document.getElementById(
+            "feesContainer"
+        );
+
+
+    if (
+        !records ||
+        records.length === 0
+    ) {
+
+        container.innerHTML = `
+            <div class="empty">
+                No fee records found.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        records
+            .map(
+                function(fee) {
+
+                    const student =
+                        getStudent(
+                            fee.student_id
+                        );
+
+
+                    const studentName =
+                        student
+                            ? student.name
+                            : "Unknown Student";
+
+
+                    const admissionNo =
+                        student
+                            ? (
+                                student.admission_no ||
+                                "N/A"
+                            )
+                            : "N/A";
+
+
+                    const isPaid =
+                        fee.paid_date !== null &&
+                        fee.paid_date !== "";
+
+
+                    const status =
+                        isPaid
+                            ? "PAID"
+                            : "UNPAID";
+
+
+                    const statusClass =
+                        isPaid
+                            ? "paid"
+                            : "unpaid";
+
+
+                    return `
+                        <div class="fee-record">
+
+                            <h4>
+                                ${escapeHTML(
+                                    studentName
+                                )}
+                            </h4>
+
+                            <p>
+                                <strong>Admission:</strong>
+                                ${escapeHTML(
+                                    admissionNo
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Amount:</strong>
+                                ${formatMoney(
+                                    fee.amount
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Due Date:</strong>
+                                ${escapeHTML(
+                                    fee.due_date ||
+                                    "-"
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Paid Date:</strong>
+                                ${escapeHTML(
+                                    fee.paid_date ||
+                                    "Not paid"
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>Description:</strong>
+                                ${escapeHTML(
+                                    fee.description ||
+                                    "-"
+                                )}
+                            </p>
+
+                            <p class="${statusClass}">
+                                Status: ${status}
+                            </p>
+
+                            <button
+                                type="button"
+                                class="action-btn edit-btn"
+                                onclick="editFee('${String(fee.id)}')">
+
+                                ✏️ Edit
+
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="action-btn delete-btn"
+                                onclick="deleteFee('${String(fee.id)}')">
+
+                                🗑️ Delete
+
+                            </button>
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+
+/* =====================================================
+   ADD / UPDATE FEE
+===================================================== */
+
+async function saveFee(
+    event
+) {
+
+    event.preventDefault();
+
+
+    const saveButton =
+        document.getElementById(
+            "saveButton"
+        );
+
+
+    saveButton.disabled =
+        true;
+
+
+    saveButton.textContent =
+        "Saving...";
+
+
+    try {
+
+        const feeId =
+            document.getElementById(
+                "feeId"
+            ).value;
+
+
+        const studentId =
+            document.getElementById(
+                "studentId"
+            ).value;
+
+
+        const amount =
+            document.getElementById(
+                "amount"
+            ).value;
+
+
+        const dueDate =
+            document.getElementById(
+                "dueDate"
+            ).value;
+
+
+        const paidDate =
+            document.getElementById(
+                "paidDate"
+            ).value;
+
+
+        const description =
+            document.getElementById(
+                "description"
+            ).value.trim();
+
+
+        if (!studentId) {
+
+            throw new Error(
+                "Please select a student."
+            );
+
+        }
+
+
+        if (
+            !amount ||
+            Number(amount) < 0
+        ) {
+
+            throw new Error(
+                "Please enter a valid amount."
+            );
+
+        }
+
+
+        if (!dueDate) {
+
+            throw new Error(
+                "Please select a due date."
+            );
+
+        }
+
+
+        const feeData = {
+
+            student_id:
+                studentId,
+
+            amount:
+                Number(amount),
+
+            due_date:
+                dueDate,
+
+            paid_date:
+                paidDate || null,
+
+            description:
+                description || null
+
+        };
+
+
+        let result;
+
+
+        if (feeId) {
+
+            result =
+                await dbFees
+                    .from("fees")
+                    .update(
+                        feeData
+                    )
+                    .eq(
+                        "id",
+                        feeId
+                    );
+
+        } else {
+
+            result =
+                await dbFees
+                    .from("fees")
+                    .insert(
+                        feeData
+                    );
+
+        }
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        showMessage(
+            feeId
+                ? "Fee record updated successfully."
+                : "Fee record added successfully.",
+            true
+        );
+
+
+        resetForm();
+
+
+        await loadFees();
+
+
+    } catch (error) {
+
+        console.error(
+            "SAVE FEE ERROR:",
+            error
+        );
+
+
+        showMessage(
+            "Unable to save fee: " +
+            error.message,
+            false
+        );
+
+
+    } finally {
+
+        saveButton.disabled =
+            false;
+
+
+        saveButton.textContent =
+            document.getElementById(
+                "feeId"
+            ).value
+                ? "Update Fee"
+                : "➕ Add Fee";
+
+    }
+
+}
+
+
+
+/* =====================================================
+   EDIT FEE
+===================================================== */
+
+window.editFee =
+    function(feeId) {
+
+        const fee =
+            fees.find(
+                function(item) {
+
+                    return String(item.id) ===
+                        String(feeId);
+
+                }
+            );
+
+
+        if (!fee) {
+
+            alert(
+                "Fee record not found."
+            );
+
+            return;
+
+        }
+
+
+        document.getElementById(
+            "feeId"
+        ).value =
+            fee.id;
+
+
+        document.getElementById(
+            "studentId"
+        ).value =
+            fee.student_id;
+
+
+        document.getElementById(
+            "amount"
+        ).value =
+            fee.amount;
+
+
+        document.getElementById(
+            "dueDate"
+        ).value =
+            fee.due_date || "";
+
+
+        document.getElementById(
+            "paidDate"
+        ).value =
+            fee.paid_date || "";
+
+
+        document.getElementById(
+            "description"
+        ).value =
+            fee.description || "";
+
+
+        document.getElementById(
+            "formTitle"
+        ).textContent =
+            "✏️ Edit Fee Record";
+
+
+        document.getElementById(
+            "saveButton"
+        ).textContent =
+            "Update Fee";
+
+
+        document.getElementById(
+            "cancelButton"
+        ).style.display =
+            "block";
+
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    };
+
+
+
+/* =====================================================
+   DELETE FEE
+===================================================== */
+
+window.deleteFee =
+    async function(feeId) {
+
+        const confirmed =
+            confirm(
+                "Are you sure you want to delete this fee record?"
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const {
+                error
+            } = await dbFees
+                .from("fees")
+                .delete()
+                .eq(
+                    "id",
+                    feeId
+                );
+
+
+            if (error) {
+
+                throw error;
+
+            }
+
+
+            showMessage(
+                "Fee record deleted successfully.",
+                true
+            );
+
+
+            await loadFees();
+
+
+        } catch (error) {
+
+            console.error(
+                "DELETE FEE ERROR:",
+                error
+            );
+
+
+            showMessage(
+                "Unable to delete fee: " +
+                error.message,
+                false
+            );
+
+        }
+
+    };
+
+
+
+/* =====================================================
+   RESET FORM
+===================================================== */
+
+function resetForm() {
+
+    document.getElementById(
+        "feeForm"
+    ).reset();
+
+
+    document.getElementById(
+        "feeId"
+    ).value =
+        "";
+
+
+    document.getElementById(
+        "formTitle"
+    ).textContent =
+        "➕ Add Fee Record";
+
+
+    document.getElementById(
+        "saveButton"
+    ).textContent =
+        "➕ Add Fee";
+
+
+    document.getElementById(
+        "cancelButton"
+    ).style.display =
+        "none";
+
+}
+
+
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+function searchFees() {
+
+    const search =
+        document.getElementById(
+            "searchFee"
+        ).value
+            .trim()
+            .toLowerCase();
+
+
+    if (!search) {
+
+        displayFees(
+            fees
+        );
+
+        return;
+
+    }
+
+
+    const results =
+        fees.filter(
+            function(fee) {
+
+                const student =
+                    getStudent(
+                        fee.student_id
+                    );
+
+
+                const text = [
+
+                    student
+                        ? student.name
+                        : "",
+
+                    student
+                        ? student.admission_no
+                        : "",
+
+                    fee.description,
+
+                    fee.amount,
+
+                    fee.due_date,
+
+                    fee.paid_date,
+
+                    fee.paid_date
+                        ? "paid"
+                        : "unpaid"
+
+                ]
+                    .join(" ")
+                    .toLowerCase();
+
+
+                return text.includes(
+                    search
+                );
+
+            }
+        );
+
+
+    displayFees(
+        results
+    );
+
+}
+
+
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+async function logout() {
+
+    const button =
+        document.getElementById(
+            "logoutButton"
+        );
+
+
+    button.disabled =
+        true;
+
+
+    button.textContent =
+        "Logging out...";
+
+
+    try {
+
+        const {
+            error
+        } = await dbFees.auth.signOut();
+
+
+        if (error) {
+
+            throw error;
+
+        }
+
+
+        window.location.replace(
+            "login.html"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "LOGOUT ERROR:",
+            error
+        );
+
+
+        button.disabled =
+            false;
+
+
+        button.textContent =
+            "Logout";
+
+
+        alert(
+            "Logout failed: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   AUTH STATE
+===================================================== */
+
+Fees.auth.onAuthStateChange(
+    function(event, session) {
+
+        if (
+            event === "SIGNED_OUT" ||
+            !session
+        ) {
+
+            window.location.replace(
+                "login.html"
+            );
+
+        }
+
+    }
+);
+
+
+
+/* =====================================================
+   START
+===================================================== */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async function() {
+
+        const {
+            data,
+            error
+        } = await dbFees.auth.getSession();
+
+
+        if (
+            error ||
+            !data.session
+        ) {
+
+            window.location.replace(
+                "login.html"
+            );
+
+            return;
+
+        }
+
+
+        document.getElementById(
+            "userEmail"
+        ).textContent =
+            data.session.user.email ||
+            "Administrator";
+
+
+        document.getElementById(
+            "logoutButton"
+        ).addEventListener(
+            "click",
+            logout
+        );
+
+
+        document.getElementById(
+            "feeForm"
+        ).addEventListener(
+            "submit",
+            saveFee
+        );
+
+
+        document.getElementById(
+            "cancelButton"
+        ).addEventListener(
+            "click",
+            resetForm
+        );
+
+
+        document.getElementById(
+            "searchFee"
+        ).addEventListener(
+            "input",
+            searchFees
+        );
+
+
+        await loadStudents();
+
+        await loadFees();
+
+    }
+
+);
+
+</script></body></html>

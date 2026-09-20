@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>School Information System - Dashboard</title>
+
+    <!-- SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f9;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+            margin: auto;
+            padding: 14px;
+        }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(
+                135deg,
+                #0f2b5b,
+                #1a4a8a
+            );
+            color: white;
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 25px;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        #logoutButton {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 13px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        #logoutButton:hover {
+            background: #b91c1c;
+        }
+
+        /* DASHBOARD TITLE */
+        .dashboard-title {
+            margin: 15px 0;
+        }
+
+        .dashboard-title h2 {
+            font-size: 22px;
+            color: #0f2b5b;
+        }
+
+        .dashboard-title p {
+            color: #64748b;
+            margin-top: 4px;
+            font-size: 14px;
+        }
+
+        /* STATS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 17px 8px;
+            text-align: center;
+            box-shadow: 0 2px 7px rgba(0,0,0,0.07);
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-number {
+            font-size: 25px;
+            font-weight: 700;
+            color: #0f2b5b;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        /* MENU */
+        .school-section {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 7px rgba(0,0,0,0.06);
+        }
+
+        .school-section h3 {
+            color: #0f2b5b;
+            margin-bottom: 13px;
+            font-size: 18px;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .menu-card {
+            text-decoration: none;
+            color: #1e293b;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .menu-card:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .menu-icon {
+            display: block;
+            font-size: 25px;
+            margin-bottom: 6px;
+        }
+
+        /* MESSAGE */
+        #dashboardMessage {
+            display: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 9px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* REFRESH STATUS */
+        .realtime-status {
+            background: #ecfdf5;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .realtime-status.offline {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #c2410c;
+        }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            color: #64748b;
+            font-size: 12px;
+            padding: 20px 5px;
+        }
+
+        @media (max-width: 500px) {
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header h1 {
+                font-size: 21px;
+                padding-right: 70px;
+            }
+
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <header class="header">
+
+        <h1>
+            My School
+        </h1>
+
+        <p>
+            School Information System
+        </p>
+
+        <button
+            type="button"
+            id="logoutButton">
+
+            Logout
+
+        </button>
+
+    </header>
+
+
+    <!-- TITLE -->
+    <section class="dashboard-title">
+
+        <h2>
+            📊 Dashboard
+        </h2>
+
+        <p>
+            School information and statistics
+        </p>
+
+    </section>
+
+
+    <!-- REALTIME STATUS -->
+    <div
+        id="realtimeStatus"
+        class="realtime-status">
+
+        🟢 Live database updates enabled
+
+    </div>
+
+
+    <!-- ERROR MESSAGE -->
+    <div id="dashboardMessage"></div>
+
+
+    <!-- STATISTICS -->
+    <section class="stats">
+
+        <div class="stat-card">
+
+            <div
+                class="stat-number"
+                id="studentCount">
+
+                …
+
+            </div>
+
+            <div class="stat-label">
+                STUDENTS
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div
+                class="stat-number"
+                id="teacherCount">
+
+                …
+
+            </div>
+
+            <div class="stat-label">
+                TEACHERS
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div
+                class="stat-number"
+                id="classCount">
+
+                …
+
+            </div>
+
+            <div class="stat-label">
+                CLASSES
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div
+                class="stat-number"
+                id="subjectCount">
+
+                …
+
+            </div>
+
+            <div class="stat-label">
+                SUBJECTS
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div
+                class="stat-number"
+                id="feeCount">
+
+                …
+
+            </div>
+
+            <div class="stat-label">
+                FEES
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div
+                class="stat-number"
+                id="resultCount">
+
+                …
+
+            </div>
+
+            <div class="stat-label">
+                RESULTS
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SCHOOL MANAGEMENT -->
+    <section class="school-section">
+
+        <h3>
+            🏫 School Management
+        </h3>
+
+        <div class="menu-grid">
+
+            <a
+                href="students.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    👨‍🎓
+                </span>
+
+                Students
+
+            </a>
+
+
+            <a
+                href="teachers.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    👨‍🏫
+                </span>
+
+                Teachers
+
+            </a>
+
+
+            <a
+                href="classes.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    🏫
+                </span>
+
+                Classes
+
+            </a>
+
+
+            <a
+                href="subjects.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    📚
+                </span>
+
+                Subjects
+
+            </a>
+
+
+            <a
+                href="fees.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    💰
+                </span>
+
+                Fees
+
+            </a>
+
+
+            <a
+                href="attendance.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    📋
+                </span>
+
+                Attendance
+
+            </a>
+
+
+            <a
+                href="exams.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    📝
+                </span>
+
+                Exams & Marks
+
+            </a>
+
+
+            <a
+                href="results.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    📊
+                </span>
+
+                Results
+
+            </a>
+
+
+            <a
+                href="reports.html"
+                class="menu-card">
+
+                <span class="menu-icon">
+                    📈
+                </span>
+
+                Reports
+
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer>
+
+        My School Information System · Grade 1–Grade 6
+
+    </footer>
+
+</div>
+
+
+<!-- DASHBOARD JAVASCRIPT -->
+<script src="dashboard.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classes - School Information System</title>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+
+    <style>
+        /* ========== RESET & BASE ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ========== TOPBAR ========== */
+        .topbar {
+            background: #0f172a;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 4px solid #3b82f6;
+        }
+
+        .topbar h1 {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .topbar p {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        #backButton {
+            background: #334155;
+            border: none;
+            color: white;
+            font-size: 24px;
+            padding: 5px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #backButton:hover {
+            background: #475569;
+        }
+
+        /* ========== NAVIGATION ========== */
+        .main-menu {
+            background: white;
+            padding: 12px 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .main-menu a {
+            text-decoration: none;
+            color: #475569;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 6px 0;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
+        }
+
+        .main-menu a:hover {
+            color: #0f172a;
+            border-bottom-color: #94a3b8;
+        }
+
+        .main-menu a.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        /* ========== MAIN CONTAINER ========== */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            width: 100%;
+            flex: 1;
+        }
+
+        .welcome {
+            margin-bottom: 30px;
+        }
+
+        .welcome h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .welcome p {
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* ========== FORMS / CARDS ========== */
+        .teacher-form,
+        .teacher-list {
+            background: white;
+            border-radius: 16px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .teacher-form h3,
+        .teacher-list h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: #0f172a;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            font-size: 14px;
+            margin: 14px 0 4px 0;
+            color: #334155;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+            background: white;
+        }
+
+        .save-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 18px;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .save-btn:hover {
+            background: #1d4ed8;
+            transform: scale(1.01);
+        }
+
+        #cancelButton {
+            background: #e2e8f0;
+            color: #1e293b;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            display: none;
+        }
+
+        #cancelButton:hover {
+            background: #cbd5e1;
+        }
+
+        #message {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+            background: #f1f5f9;
+        }
+
+        /* ========== SEARCH ========== */
+        #searchClass {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 15px;
+        }
+
+        /* ========== CLASS CARDS ========== */
+        .teacher-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            transition: 0.2s;
+        }
+
+        .teacher-card:hover {
+            border-color: #94a3b8;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .teacher-card h4 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .teacher-card p {
+            color: #475569;
+            margin: 4px 0;
+            font-size: 15px;
+        }
+
+        .teacher-card button {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 6px 6px 6px 0;
+            transition: 0.2s;
+        }
+
+        .view-students-button {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .view-students-button:hover {
+            background: #bae6fd;
+        }
+
+        .edit-class-button {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .edit-class-button:hover {
+            background: #fde68a;
+        }
+
+        .delete-class-button {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .delete-class-button:hover {
+            background: #fecaca;
+        }
+
+        .teacher-card .student-list-inner {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* ========== RESPONSIVE ========== */
+        @media (max-width: 600px) {
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .main-menu {
+                justify-content: center;
+            }
+            .teacher-form,
+            .teacher-list {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="topbar">
+        <div>
+            <h1>My School</h1>
+            <p>School Information System</p>
+        </div>
+        <button type="button" id="backButton">←</button>
+    </header>
+
+    <nav class="main-menu">
+        <a href="dashboard.html">🏠 Dashboard</a>
+        <a href="students.html">👨‍🎓 Students</a>
+        <a href="teachers.html">👨‍🏫 Teachers</a>
+        <a href="classes.html" class="active">🏫 Classes</a>
+        <a href="subjects.html">📚 Subjects</a>
+        <a href="attendance.html">📋 Attendance</a>
+        <a href="exams.html">📝 Exams & Marks</a>
+        <a href="fees.html">💰 Fees</a>
+        <a href="reports.html">📊 Reports</a>
+        <a href="#">⚙️ Settings</a>
+    </nav>
+
+    <main>
+
+        <section class="welcome">
+            <h2>Class Management</h2>
+            <p>Manage classes, class teachers and students.</p>
+        </section>
+
+        <!-- =====================================================
+        ADD / EDIT CLASS
+        ===================================================== -->
+
+        <section class="teacher-form">
+            <h3 id="formTitle">Add Class</h3>
+            <form id="classForm">
+                <input type="hidden" id="classId">
+
+                <label for="className">Class / Grade</label>
+                <input type="text" id="className" placeholder="Example: Grade 4" required>
+
+                <label for="section">Section</label>
+                <input type="text" id="section" placeholder="Example: A">
+
+                <label for="teacherId">Class Teacher</label>
+                <select id="teacherId">
+                    <option value="">Loading teachers...</option>
+                </select>
+
+                <button type="submit" class="save-btn" id="saveButton">Add Class</button>
+                <button type="button" id="cancelButton" style="display:none;">Cancel Edit</button>
+            </form>
+            <p id="message"></p>
+        </section>
+
+        <!-- =====================================================
+        SEARCH
+        ===================================================== -->
+
+        <section class="teacher-form">
+            <h3>🔍 Search Classes</h3>
+            <input type="search" id="searchClass" placeholder="Search class, section or teacher...">
+        </section>
+
+        <!-- =====================================================
+        CLASS LIST
+        ===================================================== -->
+
+        <section class="teacher-list">
+            <h3>🏫 Classes</h3>
+            <div id="classesContainer">
+                Connecting to Supabase...
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /* =====================================================
+           SUPABASE CONFIGURATION
+        ===================================================== */
+
+        const SUPABASE_URL =
+            "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+        const SUPABASE_ANON_KEY =
+            "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+        let supabaseClient = null;
+        let allClasses = [];
+        let allTeachers = [];
+        let allStudents = [];
+
+        /* =====================================================
+           INITIALIZE SUPABASE
+        ===================================================== */
+
+        try {
+            if (!window.supabase || !window.supabase.createClient) {
+                throw new Error("Supabase library failed to load.");
+            }
+            supabaseClient = window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY
+            );
+        } catch (error) {
+            console.error("SUPABASE INITIALIZATION ERROR:", error);
+        }
+
+        /* =====================================================
+           BACK BUTTON
+        ===================================================== */
+
+        document.getElementById("backButton").addEventListener("click", function() {
+            window.history.back();
+        });
+
+        /* =====================================================
+           MESSAGE
+        ===================================================== */
+
+        function showMessage(message, success = true) {
+            const box = document.getElementById("message");
+            if (!box) return;
+            box.textContent = message;
+            box.style.display = "block";
+            box.style.color = success ? "green" : "red";
+            box.style.background = success ? "#f0fdf4" : "#fef2f2";
+        }
+
+        /* =====================================================
+           ESCAPE HTML (Prevent XSS)
+        ===================================================== */
+
+        function escapeHTML(text) {
+            if (!text) return "";
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        /* =====================================================
+           LOAD TEACHERS
+        ===================================================== */
+
+        async function loadTeachers() {
+            const select = document.getElementById("teacherId");
+            select.innerHTML = '<option value="">Loading teachers...</option>';
+            try {
+                const result = await supabaseClient
+                    .from("teachers")
+                    .select("id,name,phone,subject");
+
+                if (result.error) throw result.error;
+
+                allTeachers = result.data || [];
+                select.innerHTML = '<option value="">Select class teacher</option>';
+
+                allTeachers.forEach(function(teacher) {
+                    const option = document.createElement("option");
+                    option.value = teacher.id;
+                    option.textContent = teacher.name;
+                    select.appendChild(option);
+                });
+
+                if (allTeachers.length === 0) {
+                    select.innerHTML = '<option value="">No teachers found</option>';
+                }
+            } catch (error) {
+                console.error("TEACHER LOAD ERROR:", error);
+                select.innerHTML = '<option value="">Unable to load teachers</option>';
+                showMessage("Unable to load teachers: " + error.message, false);
+            }
+        }
+
+        /* =====================================================
+           LOAD STUDENTS
+        ===================================================== */
+
+        async function loadStudents() {
+            try {
+                const result = await supabaseClient
+                    .from("students")
+                    .select("id,admission_no,name,class_id");
+
+                if (result.error) throw result.error;
+                allStudents = result.data || [];
+            } catch (error) {
+                console.error("STUDENT LOAD ERROR:", error);
+                allStudents = [];
+            }
+        }
+
+        /* =====================================================
+           GET TEACHER NAME
+        ===================================================== */
+
+        function getTeacherName(teacherId) {
+            const teacher = allTeachers.find(function(item) {
+                return String(item.id) === String(teacherId);
+            });
+            if (!teacher) return "Not assigned";
+            return teacher.name || "Unnamed teacher";
+        }
+
+        /* =====================================================
+           DISPLAY CLASSES
+        ===================================================== */
+
+        function displayClasses(classes) {
+            const container = document.getElementById("classesContainer");
+
+            if (!classes || classes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:25px;">
+                        <h3>🏫 No classes found</h3>
+                        <p>Add your first class above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = "";
+
+            classes.forEach(function(classItem) {
+                const classId = String(classItem.id);
+
+                const students = allStudents.filter(function(student) {
+                    return String(student.class_id) === classId;
+                });
+
+                const card = document.createElement("div");
+                card.className = "teacher-card";
+
+                const className = escapeHTML(classItem.name || "");
+                const section = classItem.section ? " - " + escapeHTML(classItem.section) : "";
+                const teacherName = escapeHTML(getTeacherName(classItem.teacher_id));
+
+                card.innerHTML = `
+                    <h4>🏫 ${className} ${section}</h4>
+                    <p><strong>👨‍🏫 Class Teacher:</strong> ${teacherName}</p>
+                    <p><strong>👨‍🎓 Students:</strong> ${students.length}</p>
+
+                    <button type="button" class="view-students-button" data-id="${escapeHTML(classId)}">👥 View Students</button>
+                    <button type="button" class="edit-class-button" data-id="${escapeHTML(classId)}">✏️ Edit</button>
+                    <button type="button" class="delete-class-button" data-id="${escapeHTML(classId)}">🗑️ Delete</button>
+
+                    <div id="details-${escapeHTML(classId)}" style="display:none; margin-top:15px;"></div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            // Attach event listeners
+            container.querySelectorAll(".view-students-button").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    viewClassStudents(this.dataset.id);
+                });
+            });
+
+            container.querySelectorAll(".edit-class-button").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    editClass(this.dataset.id);
+                });
+            });
+
+            container.querySelectorAll(".delete-class-button").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    deleteClass(this.dataset.id);
+                });
+            });
+        }
+
+        /* =====================================================
+           VIEW CLASS STUDENTS
+        ===================================================== */
+
+        function viewClassStudents(classId) {
+            const box = document.getElementById("details-" + classId);
+            if (!box) return;
+
+            if (box.style.display === "block") {
+                box.style.display = "none";
+                return;
+            }
+
+            const classItem = allClasses.find(function(item) {
+                return String(item.id) === String(classId);
+            });
+            if (!classItem) return;
+
+            const students = allStudents.filter(function(student) {
+                return String(student.class_id) === String(classId);
+            });
+
+            let html = `
+                <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                    <h3>${escapeHTML(classItem.name || "")} ${classItem.section ? "- " + escapeHTML(classItem.section) : ""}</h3>
+                    <p><strong>Class Teacher:</strong> ${escapeHTML(getTeacherName(classItem.teacher_id))}</p>
+                    <p><strong>Total Students:</strong> ${students.length}</p>
+            `;
+
+            if (students.length === 0) {
+                html += `<p>No students are assigned to this class yet.</p>`;
+            } else {
+                html += `<h4>Students</h4>`;
+                students.forEach(function(student, index) {
+                    html += `
+                        <div style="padding:10px; margin-bottom:6px; background:white; border-radius:6px; border:1px solid #e2e8f0;">
+                            <strong>${index + 1}. ${escapeHTML(student.name || "")}</strong><br>
+                            Admission: ${escapeHTML(student.admission_no || "N/A")}
+                        </div>
+                    `;
+                });
+            }
+
+            html += `</div>`;
+            box.innerHTML = html;
+            box.style.display = "block";
+        }
+
+        /* =====================================================
+           LOAD CLASSES
+        ===================================================== */
+
+        async function loadClasses() {
+            const container = document.getElementById("classesContainer");
+            container.innerHTML = "<p>Loading classes...</p>";
+
+            try {
+                const result = await supabaseClient
+                    .from("classes")
+                    .select("*")
+                    .order("name", { ascending: true });
+
+                if (result.error) throw result.error;
+
+                allClasses = result.data || [];
+                await loadStudents();
+                displayClasses(allClasses);
+
+            } catch (error) {
+                console.error("CLASS LOAD ERROR:", error);
+                container.innerHTML = `
+                    <div style="padding:20px; text-align:center;">
+                        <h3 style="color:red;">Unable to load classes</h3>
+                        <p>${escapeHTML(error.message)}</p>
+                        <button type="button" id="retryClassesButton" style="padding:10px 20px; border:none; background:#2563eb; color:white; border-radius:8px; cursor:pointer;">🔄 Try Again</button>
+                    </div>
+                `;
+                const retryButton = document.getElementById("retryClassesButton");
+                if (retryButton) {
+                    retryButton.addEventListener("click", loadClasses);
+                }
+            }
+        }
+
+        /* =====================================================
+           SEARCH CLASSES
+        ===================================================== */
+
+        document.getElementById("searchClass").addEventListener("input", function() {
+            const search = this.value.toLowerCase().trim();
+            if (!search) {
+                displayClasses(allClasses);
+                return;
+            }
+            const filtered = allClasses.filter(function(item) {
+                const teacherName = getTeacherName(item.teacher_id);
+                return (
+                    String(item.name || "").toLowerCase().includes(search) ||
+                    String(item.section || "").toLowerCase().includes(search) ||
+                    String(teacherName || "").toLowerCase().includes(search)
+                );
+            });
+            displayClasses(filtered);
+        });
+
+        /* =====================================================
+           ADD / UPDATE CLASS (FORM SUBMISSION)
+        ===================================================== */
+
+        document.getElementById("classForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const id = document.getElementById("classId").value;
+            const name = document.getElementById("className").value.trim();
+            const section = document.getElementById("section").value.trim();
+            const teacherId = document.getElementById("teacherId").value;
+
+            if (!name) {
+                showMessage("Please enter a class name.", false);
+                return;
+            }
+
+            try {
+                let result;
+                if (id) {
+                    // UPDATE
+                    result = await supabaseClient
+                        .from("classes")
+                        .update({
+                            name: name,
+                            section: section || null,
+                            teacher_id: teacherId || null
+                        })
+                        .eq("id", id);
+
+                    if (result.error) throw result.error;
+                    showMessage("✅ Class updated successfully!", true);
+                } else {
+                    // INSERT
+                    result = await supabaseClient
+                        .from("classes")
+                        .insert([{
+                            name: name,
+                            section: section || null,
+                            teacher_id: teacherId || null
+                        }]);
+
+                    if (result.error) throw result.error;
+                    showMessage("✅ Class added successfully!", true);
+                }
+
+                // Reset form
+                document.getElementById("classForm").reset();
+                document.getElementById("classId").value = "";
+                document.getElementById("formTitle").textContent = "Add Class";
+                document.getElementById("saveButton").textContent = "Add Class";
+                document.getElementById("cancelButton").style.display = "none";
+
+                await loadTeachers();
+                await loadClasses();
+
+            } catch (error) {
+                console.error("SAVE ERROR:", error);
+                showMessage("❌ Error saving class: " + error.message, false);
+            }
+        });
+
+        /* =====================================================
+           EDIT CLASS (Populate Form)
+        ===================================================== */
+
+        function editClass(classId) {
+            const classItem = allClasses.find(function(item) {
+                return String(item.id) === String(classId);
+            });
+            if (!classItem) {
+                showMessage("Class not found.", false);
+                return;
+            }
+
+            document.getElementById("classId").value = classItem.id;
+            document.getElementById("className").value = classItem.name || "";
+            document.getElementById("section").value = classItem.section || "";
+            document.getElementById("teacherId").value = classItem.teacher_id || "";
+
+            document.getElementById("formTitle").textContent = "Edit Class";
+            document.getElementById("saveButton").textContent = "Update Class";
+            document.getElementById("cancelButton").style.display = "inline-block";
+
+            showMessage("✏️ Editing class. Click Update to save.", true);
+            document.querySelector(".teacher-form").scrollIntoView({ behavior: "smooth" });
+        }
+
+        /* =====================================================
+           CANCEL EDIT
+        ===================================================== */
+
+        document.getElementById("cancelButton").addEventListener("click", function() {
+            document.getElementById("classForm").reset();
+            document.getElementById("classId").value = "";
+            document.getElementById("formTitle").textContent = "Add Class";
+            document.getElementById("saveButton").textContent = "Add Class";
+            document.getElementById("cancelButton").style.display = "none";
+            document.getElementById("message").style.display = "none";
+        });
+
+        /* =====================================================
+           DELETE CLASS
+        ===================================================== */
+
+        async function deleteClass(classId) {
+            const classItem = allClasses.find(function(item) {
+                return String(item.id) === String(classId);
+            });
+            if (!classItem) return;
+
+            const confirmDelete = window.confirm(
+                "Are you sure you want to delete the class '" +
+                classItem.name +
+                "'?\n\nThis will NOT delete the students, but they will be unassigned."
+            );
+
+            if (!confirmDelete) return;
+
+            try {
+                const result = await supabaseClient
+                    .from("classes")
+                    .delete()
+                    .eq("id", classId);
+
+                if (result.error) throw result.error;
+
+                showMessage("🗑️ Class deleted successfully.", true);
+                await loadClasses();
+
+            } catch (error) {
+                console.error("DELETE ERROR:", error);
+                showMessage("❌ Error deleting class: " + error.message, false);
+            }
+        }
+
+        /* =====================================================
+           INITIALIZE PAGE
+        ===================================================== */
+
+        async function initializePage() {
+            await loadTeachers();
+            await loadClasses();
+        }
+
+        initializePage();
+    </script>
+
+</body>
+
+</html>

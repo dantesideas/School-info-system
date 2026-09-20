@@ -1,0 +1,1444 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Attendance - School Information System</title><link rel="stylesheet" href="style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><header class="topbar">
+    <div>
+        <h1>My School</h1>
+        <p>School Information System</p>
+    </div><button type="button" onclick="goBack()">←</button>
+
+</header><nav class="main-menu"><a href="dashboard.html">🏠 Dashboard</a>
+<a href="students.html">👨‍🎓 Students</a>
+<a href="teachers.html">👨‍🏫 Teachers</a>
+<a href="classes.html">🏫 Classes</a>
+<a href="subjects.html">📚 Subjects</a>
+<a href="attendance.html" class="active">📋 Attendance</a>
+<a href="exams.html">📝 Exams & Marks</a>
+<a href="fees.html">💰 Fees</a>
+<a href="reports.html">📊 Reports</a>
+<a href="#">⚙️ Settings</a>
+
+</nav><main><section class="welcome"><h2>📋 Attendance Management</h2>
+
+<p>
+    Record and view student attendance.
+</p>
+
+</section><!-- ATTENDANCE FORM --><section class="teacher-form"><h3>📅 Record Attendance</h3>
+
+<label for="attendanceDate">
+    Attendance Date
+</label>
+
+<input
+    type="date"
+    id="attendanceDate"
+>
+
+<label for="classSelect">
+    Class
+</label>
+
+<select id="classSelect">
+
+    <option value="">
+        Loading classes...
+    </option>
+
+</select>
+
+<button
+    type="button"
+    class="save-btn"
+    id="loadStudentsButton"
+    onclick="loadStudents()">
+
+    👨‍🎓 Load Students
+
+</button>
+
+<p id="formMessage"></p>
+
+</section><!-- STUDENTS --><section class="teacher-list"><h3>👨‍🎓 Student Attendance</h3>
+
+<div id="studentsContainer">
+
+    Select a date and class,
+    then click Load Students.
+
+</div>
+
+</section><section
+    id="saveSection"
+    class="teacher-form"
+    style="display:none;"
+><button
+    type="button"
+    class="save-btn"
+    onclick="saveAttendance()">
+
+    💾 Save Attendance
+
+</button>
+
+</section><!-- SEARCH / VIEW --><section class="teacher-form"><h3>🔍 View Attendance</h3>
+
+<label for="viewDate">
+    Date
+</label>
+
+<input
+    type="date"
+    id="viewDate"
+>
+
+<label for="viewClass">
+    Class
+</label>
+
+<select id="viewClass">
+
+    <option value="">
+        Loading classes...
+    </option>
+
+</select>
+
+<button
+    type="button"
+    class="save-btn"
+    onclick="viewAttendance()">
+
+    📊 View Attendance
+
+</button>
+
+<p id="viewMessage"></p>
+
+</section><section class="teacher-list"><h3>📊 Attendance Records</h3>
+
+<div id="attendanceContainer">
+
+    Select a date and class to view attendance.
+
+</div>
+
+</section></main><script>
+
+/* =====================================================
+   SUPABASE
+===================================================== */
+
+const SUPABASE_URL =
+    "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+const SUPABASE_ANON_KEY =
+    "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+let supabaseClient = null;
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let allClasses = [];
+
+let currentStudents = [];
+
+let currentAttendance = {};
+
+
+/* =====================================================
+   INITIALIZE SUPABASE
+===================================================== */
+
+try {
+
+    if (
+        !window.supabase ||
+        !window.supabase.createClient
+    ) {
+
+        throw new Error(
+            "Supabase library failed to load."
+        );
+
+    }
+
+    supabaseClient =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+        );
+
+}
+
+catch (error) {
+
+    console.error(
+        "SUPABASE ERROR:",
+        error
+    );
+
+}
+
+
+/* =====================================================
+   BACK
+===================================================== */
+
+function goBack() {
+
+    window.history.back();
+
+}
+
+
+/* =====================================================
+   TODAY
+===================================================== */
+
+function getToday() {
+
+    const today =
+        new Date();
+
+    const year =
+        today.getFullYear();
+
+    const month =
+        String(
+            today.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            today.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return (
+        year +
+        "-" +
+        month +
+        "-" +
+        day
+    );
+
+}
+
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+function showFormMessage(
+    message,
+    success = true
+) {
+
+    const box =
+        document.getElementById(
+            "formMessage"
+        );
+
+    box.textContent =
+        message;
+
+    box.style.color =
+        success
+            ? "green"
+            : "red";
+
+}
+
+
+function showViewMessage(
+    message,
+    success = true
+) {
+
+    const box =
+        document.getElementById(
+            "viewMessage"
+        );
+
+    box.textContent =
+        message;
+
+    box.style.color =
+        success
+            ? "green"
+            : "red";
+
+}
+
+
+/* =====================================================
+   LOAD CLASSES
+===================================================== */
+
+async function loadClasses() {
+
+    const classSelect =
+        document.getElementById(
+            "classSelect"
+        );
+
+    const viewClass =
+        document.getElementById(
+            "viewClass"
+        );
+
+    classSelect.innerHTML =
+        '<option value="">Loading classes...</option>';
+
+    viewClass.innerHTML =
+        '<option value="">Loading classes...</option>';
+
+    try {
+
+        const result =
+            await supabaseClient
+                .from("classes")
+                .select(
+                    "id,name,section"
+                )
+                .order(
+                    "name",
+                    {
+                        ascending: true
+                    }
+                );
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+        allClasses =
+            result.data || [];
+
+        classSelect.innerHTML =
+            '<option value="">Select class</option>';
+
+        viewClass.innerHTML =
+            '<option value="">Select class</option>';
+
+        allClasses.forEach(
+            function(item) {
+
+                const text =
+                    item.name +
+                    (
+                        item.section
+                            ? " - " +
+                              item.section
+                            : ""
+                    );
+
+                const option1 =
+                    document.createElement(
+                        "option"
+                    );
+
+                option1.value =
+                    item.id;
+
+                option1.textContent =
+                    text;
+
+                classSelect.appendChild(
+                    option1
+                );
+
+
+                const option2 =
+                    document.createElement(
+                        "option"
+                    );
+
+                option2.value =
+                    item.id;
+
+                option2.textContent =
+                    text;
+
+                viewClass.appendChild(
+                    option2
+                );
+
+            }
+        );
+
+
+        if (allClasses.length === 0) {
+
+            classSelect.innerHTML =
+                '<option value="">No classes found</option>';
+
+            viewClass.innerHTML =
+                '<option value="">No classes found</option>';
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "CLASS LOAD ERROR:",
+            error
+        );
+
+        classSelect.innerHTML =
+            '<option value="">Unable to load classes</option>';
+
+        viewClass.innerHTML =
+            '<option value="">Unable to load classes</option>';
+
+        showFormMessage(
+            "Unable to load classes: " +
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   LOAD STUDENTS
+===================================================== */
+
+async function loadStudents() {
+
+    const date =
+        document.getElementById(
+            "attendanceDate"
+        ).value;
+
+    const classId =
+        document.getElementById(
+            "classSelect"
+        ).value;
+
+    const container =
+        document.getElementById(
+            "studentsContainer"
+        );
+
+
+    if (!date) {
+
+        showFormMessage(
+            "Please select an attendance date.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    if (!classId) {
+
+        showFormMessage(
+            "Please select a class.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        "<p>Loading students...</p>";
+
+
+    try {
+
+        const studentResult =
+            await supabaseClient
+                .from("students")
+                .select(
+                    "id,admission_no,name,class_id"
+                )
+                .eq(
+                    "class_id",
+                    classId
+                )
+                .order(
+                    "name",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+        if (studentResult.error) {
+
+            throw studentResult.error;
+
+        }
+
+
+        currentStudents =
+            studentResult.data || [];
+
+
+        if (
+            currentStudents.length === 0
+        ) {
+
+            container.innerHTML = `
+
+                <div style="
+                    padding:20px;
+                    text-align:center;
+                ">
+
+                    <h3>
+                        👨‍🎓 No students found
+                    </h3>
+
+                    <p>
+                        No students are assigned
+                        to this class.
+                    </p>
+
+                </div>
+
+            `;
+
+            document.getElementById(
+                "saveSection"
+            ).style.display =
+                "none";
+
+            return;
+
+        }
+
+
+        /* -----------------------------------------
+           LOAD EXISTING ATTENDANCE
+        ----------------------------------------- */
+
+        const attendanceResult =
+            await supabaseClient
+                .from("attendance")
+                .select(
+                    "id,student_id,status"
+                )
+                .eq(
+                    "class_id",
+                    classId
+                )
+                .eq(
+                    "attendance_date",
+                    date
+                );
+
+
+        if (attendanceResult.error) {
+
+            throw attendanceResult.error;
+
+        }
+
+
+        currentAttendance = {};
+
+
+        (
+            attendanceResult.data || []
+        ).forEach(
+            function(record) {
+
+                currentAttendance[
+                    String(
+                        record.student_id
+                    )
+                ] =
+                    record.status;
+
+            }
+        );
+
+
+        displayStudents();
+
+
+        document.getElementById(
+            "saveSection"
+        ).style.display =
+            "block";
+
+
+        showFormMessage(
+            currentStudents.length +
+            " student(s) loaded."
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "STUDENT LOAD ERROR:",
+            error
+        );
+
+        container.innerHTML = `
+
+            <p style="color:red;">
+                Unable to load students:
+                ${escapeHTML(
+                    error.message
+                )}
+            </p>
+
+        `;
+
+        document.getElementById(
+            "saveSection"
+        ).style.display =
+            "none";
+
+    }
+
+}
+
+
+/* =====================================================
+   DISPLAY STUDENTS
+===================================================== */
+
+function displayStudents() {
+
+    const container =
+        document.getElementById(
+            "studentsContainer"
+        );
+
+
+    let html = `
+
+        <div style="overflow-x:auto;">
+
+            <table style="
+                width:100%;
+                border-collapse:collapse;
+            ">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="padding:10px;">
+                            #
+                        </th>
+
+                        <th style="padding:10px;">
+                            Admission No.
+                        </th>
+
+                        <th style="padding:10px;">
+                            Student
+                        </th>
+
+                        <th style="padding:10px;">
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+    `;
+
+
+    currentStudents.forEach(
+        function(student, index) {
+
+            const savedStatus =
+                currentAttendance[
+                    String(
+                        student.id
+                    )
+                ];
+
+
+            const status =
+                savedStatus ||
+                "Present";
+
+
+            html += `
+
+                <tr>
+
+                    <td style="
+                        padding:10px;
+                        text-align:center;
+                    ">
+                        ${index + 1}
+                    </td>
+
+                    <td style="padding:10px;">
+                        ${escapeHTML(
+                            student.admission_no ||
+                            "N/A"
+                        )}
+                    </td>
+
+                    <td style="padding:10px;">
+                        <strong>
+                            ${escapeHTML(
+                                student.name
+                            )}
+                        </strong>
+                    </td>
+
+                    <td style="padding:10px;">
+
+                        <select
+                            class="attendance-status"
+                            data-student-id="${student.id}"
+                            style="
+                                padding:8px;
+                                min-width:130px;
+                            "
+                        >
+
+                            <option
+                                value="Present"
+                                ${
+                                    status ===
+                                    "Present"
+                                        ? "selected"
+                                        : ""
+                                }
+                            >
+                                Present
+                            </option>
+
+                            <option
+                                value="Absent"
+                                ${
+                                    status ===
+                                    "Absent"
+                                        ? "selected"
+                                        : ""
+                                }
+                            >
+                                Absent
+                            </option>
+
+                            <option
+                                value="Late"
+                                ${
+                                    status ===
+                                    "Late"
+                                        ? "selected"
+                                        : ""
+                                }
+                            >
+                                Late
+                            </option>
+
+                            <option
+                                value="Excused"
+                                ${
+                                    status ===
+                                    "Excused"
+                                        ? "selected"
+                                        : ""
+                                }
+                            >
+                                Excused
+                            </option>
+
+                        </select>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+    );
+
+
+    html += `
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+
+    container.innerHTML =
+        html;
+
+}
+
+
+/* =====================================================
+   SAVE ATTENDANCE
+===================================================== */
+
+async function saveAttendance() {
+
+    const date =
+        document.getElementById(
+            "attendanceDate"
+        ).value;
+
+    const classId =
+        document.getElementById(
+            "classSelect"
+        ).value;
+
+
+    if (!date || !classId) {
+
+        showFormMessage(
+            "Please select date and class.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    const inputs =
+        document.querySelectorAll(
+            ".attendance-status"
+        );
+
+
+    if (
+        inputs.length === 0
+    ) {
+
+        showFormMessage(
+            "No students loaded.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    showFormMessage(
+        "Saving attendance..."
+    );
+
+
+    try {
+
+        /*
+         * Delete existing records for this
+         * class and date first.
+         */
+
+        const deleteResult =
+            await supabaseClient
+                .from("attendance")
+                .delete()
+                .eq(
+                    "class_id",
+                    classId
+                )
+                .eq(
+                    "attendance_date",
+                    date
+                );
+
+
+        if (deleteResult.error) {
+
+            throw deleteResult.error;
+
+        }
+
+
+        const records = [];
+
+
+        inputs.forEach(
+            function(input) {
+
+                records.push({
+
+                    student_id:
+                        Number(
+                            input.dataset.studentId
+                        ),
+
+                    class_id:
+                        Number(
+                            classId
+                        ),
+
+                    attendance_date:
+                        date,
+
+                    status:
+                        input.value
+
+                });
+
+            }
+        );
+
+
+        if (
+            records.length === 0
+        ) {
+
+            showFormMessage(
+                "No attendance records to save.",
+                false
+            );
+
+            return;
+
+        }
+
+
+        const result =
+            await supabaseClient
+                .from("attendance")
+                .insert(
+                    records
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        showFormMessage(
+            records.length +
+            " attendance record(s) saved successfully! ✓"
+        );
+
+
+        await loadStudents();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "SAVE ATTENDANCE ERROR:",
+            error
+        );
+
+        showFormMessage(
+            "Error saving attendance: " +
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   VIEW ATTENDANCE
+===================================================== */
+
+async function viewAttendance() {
+
+    const date =
+        document.getElementById(
+            "viewDate"
+        ).value;
+
+    const classId =
+        document.getElementById(
+            "viewClass"
+        ).value;
+
+    const container =
+        document.getElementById(
+            "attendanceContainer"
+        );
+
+
+    if (!date) {
+
+        showViewMessage(
+            "Please select a date.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    if (!classId) {
+
+        showViewMessage(
+            "Please select a class.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        "<p>Loading attendance...</p>";
+
+
+    try {
+
+        const result =
+            await supabaseClient
+                .from("attendance")
+                .select(
+                    "id,student_id,class_id,attendance_date,status"
+                )
+                .eq(
+                    "class_id",
+                    classId
+                )
+                .eq(
+                    "attendance_date",
+                    date
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        const records =
+            result.data || [];
+
+
+        if (records.length === 0) {
+
+            container.innerHTML = `
+
+                <div style="
+                    padding:20px;
+                    text-align:center;
+                ">
+
+                    <h3>
+                        📋 No attendance records
+                    </h3>
+
+                    <p>
+                        No attendance has been
+                        recorded for this date.
+                    </p>
+
+                </div>
+
+            `;
+
+            showViewMessage(
+                "No records found."
+            );
+
+            return;
+
+        }
+
+
+        const studentIds =
+            records.map(
+                function(record) {
+
+                    return record.student_id;
+
+                }
+            );
+
+
+        const studentResult =
+            await supabaseClient
+                .from("students")
+                .select(
+                    "id,admission_no,name"
+                )
+                .in(
+                    "id",
+                    studentIds
+                );
+
+
+        if (studentResult.error) {
+
+            throw studentResult.error;
+
+        }
+
+
+        const students =
+            studentResult.data || [];
+
+
+        const studentMap = {};
+
+
+        students.forEach(
+            function(student) {
+
+                studentMap[
+                    String(
+                        student.id
+                    )
+                ] =
+                    student;
+
+            }
+        );
+
+
+        let present = 0;
+        let absent = 0;
+        let late = 0;
+        let excused = 0;
+
+
+        records.forEach(
+            function(record) {
+
+                if (
+                    record.status ===
+                    "Present"
+                ) {
+
+                    present++;
+
+                }
+
+                else if (
+                    record.status ===
+                    "Absent"
+                ) {
+
+                    absent++;
+
+                }
+
+                else if (
+                    record.status ===
+                    "Late"
+                ) {
+
+                    late++;
+
+                }
+
+                else if (
+                    record.status ===
+                    "Excused"
+                ) {
+
+                    excused++;
+
+                }
+
+            }
+        );
+
+
+        let html = `
+
+            <div style="
+                padding:15px;
+                margin-bottom:15px;
+                background:#f8fafc;
+                border-radius:8px;
+            ">
+
+                <h3>
+                    📅 ${escapeHTML(date)}
+                </h3>
+
+                <p>
+                    <strong>Present:</strong>
+                    ${present}
+                </p>
+
+                <p>
+                    <strong>Absent:</strong>
+                    ${absent}
+                </p>
+
+                <p>
+                    <strong>Late:</strong>
+                    ${late}
+                </p>
+
+                <p>
+                    <strong>Excused:</strong>
+                    ${excused}
+                </p>
+
+                <p>
+                    <strong>Total:</strong>
+                    ${records.length}
+                </p>
+
+            </div>
+
+
+            <div style="overflow-x:auto;">
+
+                <table style="
+                    width:100%;
+                    border-collapse:collapse;
+                ">
+
+                    <thead>
+
+                        <tr>
+
+                            <th style="padding:10px;">
+                                #
+                            </th>
+
+                            <th style="padding:10px;">
+                                Admission No.
+                            </th>
+
+                            <th style="padding:10px;">
+                                Student
+                            </th>
+
+                            <th style="padding:10px;">
+                                Status
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+        `;
+
+
+        records.forEach(
+            function(record, index) {
+
+                const student =
+                    studentMap[
+                        String(
+                            record.student_id
+                        )
+                    ];
+
+
+                html += `
+
+                    <tr>
+
+                        <td style="padding:10px;">
+                            ${index + 1}
+                        </td>
+
+                        <td style="padding:10px;">
+                            ${escapeHTML(
+                                student
+                                    ? student.admission_no
+                                    : "N/A"
+                            )}
+                        </td>
+
+                        <td style="padding:10px;">
+                            <strong>
+                                ${escapeHTML(
+                                    student
+                                        ? student.name
+                                        : "Unknown student"
+                                )}
+                            </strong>
+                        </td>
+
+                        <td style="padding:10px;">
+                            ${escapeHTML(
+                                record.status
+                            )}
+                        </td>
+
+                    </tr>
+
+                `;
+
+            }
+        );
+
+
+        html += `
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        `;
+
+
+        container.innerHTML =
+            html;
+
+
+        showViewMessage(
+            records.length +
+            " attendance record(s) found."
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "VIEW ATTENDANCE ERROR:",
+            error
+        );
+
+        container.innerHTML = `
+
+            <p style="color:red;">
+                Unable to load attendance:
+                ${escapeHTML(
+                    error.message
+                )}
+            </p>
+
+        `;
+
+        showViewMessage(
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
+
+function escapeHTML(
+    value
+) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =====================================================
+   START PAGE
+===================================================== */
+
+async function startPage() {
+
+    if (!supabaseClient) {
+
+        document.getElementById(
+            "studentsContainer"
+        ).innerHTML = `
+
+            <p style="color:red;">
+                Supabase could not be initialized.
+            </p>
+
+        `;
+
+        return;
+
+    }
+
+
+    const today =
+        getToday();
+
+
+    document.getElementById(
+        "attendanceDate"
+    ).value =
+        today;
+
+
+    document.getElementById(
+        "viewDate"
+    ).value =
+        today;
+
+
+    await loadClasses();
+
+}
+
+
+startPage();
+
+</script></body>
+</html>

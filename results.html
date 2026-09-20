@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+<title>Results - School Information System</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body{
+    background:#f0f4f9;
+}
+
+.results-wrap{
+    max-width:760px;
+    margin:0 auto;
+    padding:12px;
+}
+
+.top{
+    background:linear-gradient(135deg,#0f2b5b,#1a4a8a);
+    color:#fff;
+    padding:18px 16px;
+    border-radius:16px;
+    text-align:center;
+    margin-bottom:14px;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+
+.top h1{
+    font-size:22px;
+    margin:0 0 5px;
+}
+
+.top p{
+    font-size:12px;
+    margin:0;
+    opacity:.9;
+}
+
+.back{
+    display:inline-block;
+    margin-top:10px;
+    color:#fff;
+    text-decoration:none;
+    background:rgba(255,255,255,.15);
+    padding:8px 12px;
+    border-radius:8px;
+}
+
+.card{
+    background:#fff;
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:14px;
+    box-shadow:0 2px 9px rgba(0,0,0,.07);
+}
+
+label{
+    display:block;
+    font-weight:700;
+    color:#243447;
+    font-size:13px;
+    margin-bottom:6px;
+}
+
+input,
+select{
+    width:100%;
+    padding:12px;
+    border:1px solid #d5dce5;
+    border-radius:9px;
+    font-size:15px;
+    background:#fff;
+    margin-bottom:12px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.grid>div{
+    min-width:0;
+}
+
+.subject-row{
+    display:grid;
+    grid-template-columns:1fr 110px 42px;
+    gap:8px;
+    align-items:end;
+    background:#f7fafc;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:9px;
+    border-left:4px solid #16a085;
+}
+
+.subject-row input,
+.subject-row select{
+    margin-bottom:0;
+}
+
+button{
+    border:0;
+    border-radius:9px;
+    padding:12px;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+}
+
+button:disabled{
+    opacity:.65;
+    cursor:not-allowed;
+}
+
+.add{
+    width:100%;
+    background:#edf2f7;
+    color:#243447;
+    border:2px dashed #a0aec0;
+    margin-bottom:10px;
+}
+
+.save{
+    width:100%;
+    background:#16a085;
+    color:#fff;
+}
+
+.remove{
+    background:#fed7d7;
+    color:#c53030;
+    padding:10px;
+}
+
+.msg{
+    display:none;
+    padding:11px;
+    border-radius:8px;
+    margin-bottom:12px;
+    font-size:13px;
+}
+
+.ok{
+    display:block;
+    background:#eaf8ee;
+    color:#187a35;
+}
+
+.err{
+    display:block;
+    background:#ffeaea;
+    color:#b42318;
+}
+
+.info{
+    display:block;
+    background:#eef6ff;
+    color:#24517a;
+}
+
+.table-wrap{
+    overflow-x:auto;
+}
+
+.results-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+}
+
+.results-table th,
+.results-table td{
+    padding:9px 7px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+    white-space:nowrap;
+}
+
+.results-table th{
+    background:#f7fafc;
+    color:#334155;
+}
+
+.badge{
+    font-weight:800;
+}
+
+.empty{
+    text-align:center;
+    color:#777;
+    padding:18px;
+}
+
+@media(max-width:520px){
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .subject-row{
+        grid-template-columns:1fr 95px 40px;
+    }
+
+    .results-wrap{
+        padding:10px;
+    }
+
+    .card{
+        padding:14px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="results-wrap">
+
+    <div class="top">
+        <h1>📊 Results Management</h1>
+        <p>Enter and view student examination results</p>
+        <a class="back" href="dashboard.html">← Dashboard</a>
+    </div>
+
+    <div class="card">
+
+        <div id="msg" class="msg"></div>
+
+        <form id="resultsForm">
+
+            <div class="grid">
+
+                <div>
+                    <label for="student">Student *</label>
+                    <select id="student" required>
+                        <option value="">Select student</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="class">Class *</label>
+                    <select id="class" required>
+                        <option value="">Select class</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="examType">Exam Type *</label>
+                    <select id="examType" required>
+                        <option value="">Select exam</option>
+                        <option value="Opening Exam">Opening Exam</option>
+                        <option value="Midterm Exam">Midterm Exam</option>
+                        <option value="End Term Exam">End Term Exam</option>
+                        <option value="Quiz">Quiz</option>
+                        <option value="Assignment">Assignment</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="term">Term *</label>
+                    <select id="term" required>
+                        <option value="">Select term</option>
+                        <option value="Term 1">Term 1</option>
+                        <option value="Term 2">Term 2</option>
+                        <option value="Term 3">Term 3</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="examDate">Exam Date *</label>
+                    <input type="date" id="examDate" required>
+                </div>
+
+            </div>
+
+            <h3 style="margin:8px 0 10px;color:#0f2b5b">
+                Subjects & Marks
+            </h3>
+
+            <div id="subjects"></div>
+
+            <button type="button" class="add" id="addSubject">
+                ＋ Add Subject
+            </button>
+
+            <button type="submit" class="save" id="saveBtn">
+                💾 Save Results
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3 style="margin-bottom:10px;color:#0f2b5b">
+            📋 Saved Results
+        </h3>
+
+        <div class="table-wrap">
+
+            <table class="results-table">
+
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Class</th>
+                        <th>Subject</th>
+                        <th>Score</th>
+                        <th>Grade</th>
+                        <th>Exam</th>
+                        <th>Term</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+
+                <tbody id="resultsBody">
+                    <tr>
+                        <td colspan="8" class="empty">
+                            Loading...
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+"https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+const supabaseClient =
+window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+);
+
+
+const subjectsBox =
+document.getElementById("subjects");
+
+const msg =
+document.getElementById("msg");
+
+
+let subjectOptions = [];
+
+let classOptions = [];
+
+let studentOptions = [];
+
+
+/* =========================
+   ESCAPE HTML
+========================= */
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/[&<>"']/g,function(c){
+
+            return {
+                "&":"&amp;",
+                "<":"&lt;",
+                ">":"&gt;",
+                '"':"&quot;",
+                "'":"&#039;"
+            }[c];
+
+        });
+
+}
+
+
+/* =========================
+   GRADE
+========================= */
+
+function grade(score){
+
+    const n = Number(score);
+
+    if(n >= 80) return "A";
+    if(n >= 70) return "B";
+    if(n >= 60) return "C";
+    if(n >= 50) return "D";
+
+    return "E";
+}
+
+
+/* =========================
+   MESSAGE
+========================= */
+
+function showMsg(text,type="ok"){
+
+    msg.textContent = text;
+
+    msg.className =
+        "msg " +
+        (type === "ok"
+            ? "ok"
+            : type === "info"
+                ? "info"
+                : "err");
+
+}
+
+
+/* =========================
+   ADD SUBJECT ROW
+========================= */
+
+function addSubjectRow(){
+
+    const row =
+    document.createElement("div");
+
+    row.className =
+    "subject-row";
+
+    row.innerHTML = `
+
+        <div>
+
+            <label>Subject</label>
+
+            <select
+                class="subject-select"
+                required
+            >
+
+                <option value="">
+                    Select subject
+                </option>
+
+                ${
+                    subjectOptions.map(function(x){
+
+                        return `
+                        <option value="${escapeHTML(x.id)}">
+                            ${escapeHTML(x.name)}
+                        </option>
+                        `;
+
+                    }).join("")
+                }
+
+            </select>
+
+        </div>
+
+        <div>
+
+            <label>Marks</label>
+
+            <input
+                class="score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                required
+                placeholder="0-100"
+            >
+
+        </div>
+
+        <button
+            type="button"
+            class="remove"
+        >
+            ✕
+        </button>
+
+    `;
+
+
+    row.querySelector(".remove")
+        .addEventListener("click",function(){
+
+            row.remove();
+
+            if(!subjectsBox.children.length){
+
+                addSubjectRow();
+
+            }
+
+        });
+
+
+    subjectsBox.appendChild(row);
+
+}
+
+
+/* =========================
+   LOAD LISTS
+========================= */
+
+async function loadLists(){
+
+    try{
+
+        showMsg(
+            "Loading students, classes and subjects...",
+            "info"
+        );
+
+
+        const [
+            studentsRes,
+            classesRes,
+            subjectsRes
+        ] = await Promise.all([
+
+            supabaseClient
+                .from("students")
+                .select("id,name,class_id")
+                .order("name"),
+
+            supabaseClient
+                .from("classes")
+                .select("id,name")
+                .order("name"),
+
+            supabaseClient
+                .from("subjects")
+                .select("id,name")
+                .order("name")
+
+        ]);
+
+
+        if(studentsRes.error)
+            throw studentsRes.error;
+
+        if(classesRes.error)
+            throw classesRes.error;
+
+        if(subjectsRes.error)
+            throw subjectsRes.error;
+
+
+        studentOptions =
+            studentsRes.data || [];
+
+        classOptions =
+            classesRes.data || [];
+
+        subjectOptions =
+            subjectsRes.data || [];
+
+
+        const student =
+            document.getElementById("student");
+
+        const cls =
+            document.getElementById("class");
+
+
+        studentOptions.forEach(function(s){
+
+            const option =
+            document.createElement("option");
+
+            option.value = s.id;
+
+            option.textContent =
+                s.name || "Unnamed Student";
+
+            option.dataset.class =
+                s.class_id || "";
+
+            student.appendChild(option);
+
+        });
+
+
+        classOptions.forEach(function(c){
+
+            const option =
+            document.createElement("option");
+
+            option.value = c.id;
+
+            option.textContent =
+                c.name || "Unnamed Class";
+
+            cls.appendChild(option);
+
+        });
+
+
+        subjectsBox.innerHTML = "";
+
+        addSubjectRow();
+
+
+        showMsg(
+            "Ready. Enter the student's results.",
+            "ok"
+        );
+
+
+    }catch(error){
+
+        console.error(
+            "LOAD LISTS ERROR:",
+            error
+        );
+
+        showMsg(
+            "Could not load students, classes or subjects: " +
+            (error.message || error),
+            "err"
+        );
+
+    }
+
+}
+
+
+/* =========================
+   STUDENT → CLASS
+========================= */
+
+document
+.getElementById("student")
+.addEventListener("change",function(){
+
+    const option =
+        this.selectedOptions[0];
+
+    if(
+        option &&
+        option.dataset.class
+    ){
+
+        document.getElementById("class")
+            .value =
+            option.dataset.class;
+
+    }
+
+});
+
+
+/* =========================
+   ADD SUBJECT
+========================= */
+
+document
+.getElementById("addSubject")
+.addEventListener(
+    "click",
+    addSubjectRow
+);
+
+
+/* =========================
+   SAVE RESULTS
+========================= */
+
+document
+.getElementById("resultsForm")
+.addEventListener(
+    "submit",
+    async function(e){
+
+        e.preventDefault();
+
+
+        const studentId =
+            document.getElementById("student").value;
+
+        const classId =
+            document.getElementById("class").value;
+
+        const examType =
+            document.getElementById("examType").value;
+
+        const term =
+            document.getElementById("term").value;
+
+        const examDate =
+            document.getElementById("examDate").value;
+
+
+        if(
+            !studentId ||
+            !classId ||
+            !examType ||
+            !term ||
+            !examDate
+        ){
+
+            showMsg(
+                "Please complete all required fields.",
+                "err"
+            );
+
+            return;
+
+        }
+
+
+        const rows =
+            [
+                ...document.querySelectorAll(
+                    ".subject-row"
+                )
+            ];
+
+
+        if(!rows.length){
+
+            showMsg(
+                "Please add at least one subject.",
+                "err"
+            );
+
+            return;
+
+        }
+
+
+        const studentOption =
+            document.getElementById("student")
+                .selectedOptions[0];
+
+
+        const studentName =
+            studentOption
+                ? studentOption.textContent.trim()
+                : "";
+
+
+        const year =
+            new Date(examDate).getFullYear();
+
+
+        const records = [];
+
+
+        for(const row of rows){
+
+            const subjectId =
+                row.querySelector(
+                    ".subject-select"
+                ).value;
+
+
+            const score =
+                Number(
+                    row.querySelector(".score").value
+                );
+
+
+            if(
+                !subjectId ||
+                Number.isNaN(score) ||
+                score < 0 ||
+                score > 100
+            ){
+
+                showMsg(
+                    "Please enter a valid subject and mark between 0 and 100.",
+                    "err"
+                );
+
+                return;
+
+            }
+
+
+            /* Prevent duplicate subject entries */
+
+            if(
+                records.some(
+                    r =>
+                    String(r.subject_id) ===
+                    String(subjectId)
+                )
+            ){
+
+                showMsg(
+                    "The same subject has been entered more than once.",
+                    "err"
+                );
+
+                return;
+
+            }
+
+
+            records.push({
+
+                student_id:
+                    Number(studentId),
+
+                student_name:
+                    studentName,
+
+                class_id:
+                    Number(classId),
+
+                exam_type:
+                    examType,
+
+                exam_date:
+                    examDate,
+
+                subject_id:
+                    Number(subjectId),
+
+                score:
+                    score,
+
+                grade:
+                    grade(score),
+
+                term:
+                    term,
+
+                year:
+                    year
+
+            });
+
+        }
+
+
+        const btn =
+            document.getElementById("saveBtn");
+
+
+        btn.disabled = true;
+
+        btn.textContent =
+            "⏳ Saving...";
+
+
+        try{
+
+            /*
+             IMPORTANT:
+             We do NOT send the "subject"
+             column because your database
+             does not contain that column.
+            */
+
+            const {
+                error
+            } =
+            await supabaseClient
+                .from("results")
+                .insert(records);
+
+
+            if(error)
+                throw error;
+
+
+            showMsg(
+                "✅ " +
+                records.length +
+                " result(s) saved successfully.",
+                "ok"
+            );
+
+
+            this.reset();
+
+
+            document.getElementById("examDate")
+                .value =
+                new Date()
+                    .toISOString()
+                    .slice(0,10);
+
+
+            subjectsBox.innerHTML = "";
+
+            addSubjectRow();
+
+
+            await loadResults();
+
+
+        }catch(error){
+
+            console.error(
+                "SAVE RESULTS ERROR:",
+                error
+            );
+
+
+            showMsg(
+                "Error saving results: " +
+                (error.message || error),
+                "err"
+            );
+
+
+        }finally{
+
+            btn.disabled = false;
+
+            btn.textContent =
+                "💾 Save Results";
+
+        }
+
+    }
+);
+
+
+/* =========================
+   LOAD SAVED RESULTS
+========================= */
+
+async function loadResults(){
+
+    const body =
+        document.getElementById(
+            "resultsBody"
+        );
+
+
+    body.innerHTML = `
+        <tr>
+            <td colspan="8" class="empty">
+                Loading results...
+            </td>
+        </tr>
+    `;
+
+
+    try{
+
+        /*
+         Load the valid columns
+         from results.
+        */
+
+        const resultsRes =
+            await supabaseClient
+                .from("results")
+                .select(`
+                    id,
+                    student_id,
+                    student_name,
+                    class_id,
+                    exam_type,
+                    exam_date,
+                    subject_id,
+                    score,
+                    grade,
+                    term,
+                    year
+                `)
+                .order(
+                    "exam_date",
+                    {ascending:false}
+                )
+                .order(
+                    "id",
+                    {ascending:false}
+                )
+                .limit(100);
+
+
+        if(resultsRes.error)
+            throw resultsRes.error;
+
+
+        const results =
+            resultsRes.data || [];
+
+
+        if(!results.length){
+
+            body.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty">
+                        No results saved yet.
+                    </td>
+                </tr>
+            `;
+
+            return;
+
+        }
+
+
+        /*
+         Load classes and subjects
+         separately so we can display
+         their names.
+        */
+
+        const [
+            classesRes,
+            subjectsRes
+        ] = await Promise.all([
+
+            supabaseClient
+                .from("classes")
+                .select("id,name"),
+
+            supabaseClient
+                .from("subjects")
+                .select("id,name")
+
+        ]);
+
+
+        if(classesRes.error)
+            throw classesRes.error;
+
+        if(subjectsRes.error)
+            throw subjectsRes.error;
+
+
+        const classMap = {};
+
+        (classesRes.data || [])
+            .forEach(function(c){
+
+                classMap[
+                    String(c.id)
+                ] =
+                    c.name || "";
+
+            });
+
+
+        const subjectMap = {};
+
+        (subjectsRes.data || [])
+            .forEach(function(s){
+
+                subjectMap[
+                    String(s.id)
+                ] =
+                    s.name || "";
+
+            });
+
+
+        body.innerHTML =
+            results.map(function(r){
+
+                const subjectName =
+                    subjectMap[
+                        String(r.subject_id)
+                    ] || "Unknown Subject";
+
+
+                const className =
+                    classMap[
+                        String(r.class_id)
+                    ] || "Unknown Class";
+
+
+                const g =
+                    r.grade ||
+                    grade(r.score);
+
+
+                return `
+
+                <tr>
+
+                    <td>
+                        ${escapeHTML(
+                            r.student_name ||
+                            r.student_id ||
+                            ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(className)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(subjectName)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(r.score)}
+                    </td>
+
+                    <td class="badge">
+                        ${escapeHTML(g)}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            r.exam_type || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            r.term || ""
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            r.exam_date || ""
+                        )}
+                    </td>
+
+                </tr>
+
+                `;
+
+            }).join("");
+
+
+    }catch(error){
+
+        console.error(
+            "LOAD RESULTS ERROR:",
+            error
+        );
+
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty">
+                    Unable to load results.<br>
+                    ${escapeHTML(
+                        error.message || error
+                    )}
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+
+
+/* =========================
+   INITIAL DATE
+========================= */
+
+document.getElementById("examDate")
+    .value =
+    new Date()
+        .toISOString()
+        .slice(0,10);
+
+
+/* =========================
+   START
+========================= */
+
+loadLists();
+
+loadResults();
+
+</script>
+
+</body>
+</html>

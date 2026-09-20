@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Subjects - School Information System</title>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- =====================================================
+         AUTHENTICATION GUARD
+    ====================================================== -->
+    <style>
+        html:not(.authenticated) body {
+            visibility: hidden;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f1f5f9;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: #0f172a;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 4px solid #3b82f6;
+        }
+
+        .topbar h1 {
+            font-size: 24px;
+        }
+
+        .topbar p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #userEmail {
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        #backButton,
+        #logoutButton {
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 9px 16px;
+            font-weight: 600;
+        }
+
+        #backButton {
+            background: #334155;
+            font-size: 22px;
+        }
+
+        #logoutButton {
+            background: #dc2626;
+        }
+
+        #backButton:hover {
+            background: #475569;
+        }
+
+        #logoutButton:hover {
+            background: #b91c1c;
+        }
+
+        #logoutButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .main-menu {
+            background: white;
+            padding: 12px 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+        }
+
+        .main-menu a {
+            text-decoration: none;
+            color: #475569;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 6px 0;
+            border-bottom: 3px solid transparent;
+        }
+
+        .main-menu a:hover {
+            color: #0f172a;
+        }
+
+        .main-menu a.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        main {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .welcome {
+            margin-bottom: 30px;
+        }
+
+        .welcome h2 {
+            font-size: 28px;
+            color: #0f172a;
+        }
+
+        .welcome p {
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card h3 {
+            font-size: 20px;
+            color: #0f172a;
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 14px 0 5px;
+            color: #334155;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            background: #f8fafc;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .save-btn {
+            width: 100%;
+            margin-top: 18px;
+            padding: 12px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .save-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #cancelButton {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px 24px;
+            background: #e2e8f0;
+            color: #1e293b;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: none;
+        }
+
+        #message {
+            display: none;
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        #searchSubject {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 15px;
+        }
+
+        .subject-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+
+        .subject-card:hover {
+            background: white;
+            border-color: #94a3b8;
+        }
+
+        .subject-card h4 {
+            font-size: 20px;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .subject-card p {
+            color: #475569;
+            margin: 5px 0;
+        }
+
+        .subject-card button {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 8px 6px 0 0;
+        }
+
+        .edit-button {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .edit-button:hover {
+            background: #fde68a;
+        }
+
+        .delete-button {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .delete-button:hover {
+            background: #fecaca;
+        }
+
+        .loading {
+            padding: 25px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .error-box {
+            padding: 20px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border-radius: 10px;
+            border: 1px solid #fecaca;
+        }
+
+        @media (max-width: 600px) {
+            .topbar {
+                padding: 15px;
+            }
+
+            .topbar-right {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .main-menu {
+                padding: 12px 15px;
+                justify-content: center;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            main {
+                padding: 20px 12px;
+            }
+        }
+    </style>
+
+    <script>
+        "use strict";
+
+        const SUPABASE_URL =
+            "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+        const SUPABASE_PUBLISHABLE_KEY =
+            "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+        const authClient =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_PUBLISHABLE_KEY
+            );
+
+        /*
+         * Authentication guard.
+         * The page remains hidden until a valid session exists.
+         */
+        (async function () {
+            try {
+                const { data, error } =
+                    await authClient.auth.getSession();
+
+                if (error || !data.session) {
+                    window.location.replace("login.html");
+                    return;
+                }
+
+                document.documentElement.classList.add("authenticated");
+            } catch (error) {
+                console.error("AUTHENTICATION ERROR:", error);
+                window.location.replace("login.html");
+            }
+        })();
+
+        /*
+         * Logout
+         */
+        window.logoutUser = async function () {
+            const button =
+                document.getElementById("logoutButton");
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Logging out...";
+            }
+
+            try {
+                const { error } =
+                    await authClient.auth.signOut();
+
+                if (error) {
+                    throw error;
+                }
+
+                window.location.replace("login.html");
+
+            } catch (error) {
+                console.error("LOGOUT ERROR:", error);
+
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = "Logout";
+                }
+
+                alert(
+                    "Logout failed.\n\n" +
+                    (error.message || "Please try again.")
+                );
+            }
+        };
+
+        authClient.auth.onAuthStateChange(
+            function (event) {
+                if (event === "SIGNED_OUT") {
+                    window.location.replace("login.html");
+                }
+            }
+        );
+    </script>
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div>
+        <h1>My School</h1>
+        <p>School Information System</p>
+    </div>
+
+    <div class="topbar-right">
+
+        <span id="userEmail"></span>
+
+        <button
+            type="button"
+            id="backButton"
+            title="Go Back">
+            ←
+        </button>
+
+        <button
+            type="button"
+            id="logoutButton"
+            onclick="logoutUser()">
+            Logout
+        </button>
+
+    </div>
+
+</header>
+
+
+<nav class="main-menu">
+
+    <a href="dashboard.html">🏠 Dashboard</a>
+
+    <a href="students.html">👨‍🎓 Students</a>
+
+    <a href="teachers.html">👨‍🏫 Teachers</a>
+
+    <a href="classes.html">🏫 Classes</a>
+
+    <a href="subjects.html" class="active">📚 Subjects</a>
+
+    <a href="attendance.html">📋 Attendance</a>
+
+    <a href="exams.html">📝 Exams &amp; Marks</a>
+
+    <a href="fees.html">💰 Fees</a>
+
+    <a href="reports.html">📊 Reports</a>
+
+    <a href="#">⚙️ Settings</a>
+
+</nav>
+
+
+<main>
+
+    <section class="welcome">
+
+        <h2>📚 Subject Management</h2>
+
+        <p>
+            Add, edit, search and manage school subjects.
+        </p>
+
+    </section>
+
+
+    <!-- =====================================================
+         ADD / EDIT SUBJECT
+    ====================================================== -->
+
+    <section class="card">
+
+        <h3 id="formTitle">
+            ➕ Add Subject
+        </h3>
+
+        <form id="subjectForm">
+
+            <input
+                type="hidden"
+                id="subjectId">
+
+            <label for="subjectName">
+                Subject Name
+            </label>
+
+            <input
+                type="text"
+                id="subjectName"
+                placeholder="Example: Mathematics"
+                required>
+
+            <label for="subjectCode">
+                Subject Code
+            </label>
+
+            <input
+                type="text"
+                id="subjectCode"
+                placeholder="Example: MAT">
+
+            <button
+                type="submit"
+                class="save-btn"
+                id="saveButton">
+                ➕ Add Subject
+            </button>
+
+            <button
+                type="button"
+                id="cancelButton">
+                Cancel Edit
+            </button>
+
+        </form>
+
+        <p id="message"></p>
+
+    </section>
+
+
+    <!-- =====================================================
+         SEARCH
+    ====================================================== -->
+
+    <section class="card">
+
+        <h3>🔍 Search Subjects</h3>
+
+        <input
+            type="search"
+            id="searchSubject"
+            placeholder="Search subject or code..."
+            autocomplete="off">
+
+    </section>
+
+
+    <!-- =====================================================
+         SUBJECT LIST
+    ====================================================== -->
+
+    <section class="card">
+
+        <h3>📚 Subjects</h3>
+
+        <div id="subjectsContainer">
+            <div class="loading">
+                Loading subjects...
+            </div>
+        </div>
+
+    </section>
+
+</main>
+
+
+<script>
+    "use strict";
+
+    const db = authClient;
+
+    let allSubjects = [];
+
+
+    /* =====================================================
+       HELPERS
+    ====================================================== */
+
+    function escapeHTML(value) {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    function showMessage(message, success = true) {
+
+        const box =
+            document.getElementById("message");
+
+        if (!box) return;
+
+        box.textContent = message;
+
+        box.style.display = "block";
+
+        box.style.color =
+            success ? "green" : "#b91c1c";
+
+        box.style.background =
+            success ? "#f0fdf4" : "#fef2f2";
+
+    }
+
+
+    function resetForm() {
+
+        document.getElementById("subjectForm").reset();
+
+        document.getElementById("subjectId").value = "";
+
+        document.getElementById("formTitle").textContent =
+            "➕ Add Subject";
+
+        document.getElementById("saveButton").textContent =
+            "➕ Add Subject";
+
+        document.getElementById("cancelButton").style.display =
+            "none";
+    }
+
+
+    /* =====================================================
+       LOAD USER
+    ====================================================== */
+
+    async function loadUser() {
+
+        const { data, error } =
+            await db.auth.getSession();
+
+        if (error || !data.session) {
+
+            window.location.replace("login.html");
+
+            return false;
+        }
+
+        const emailElement =
+            document.getElementById("userEmail");
+
+        if (emailElement) {
+
+            emailElement.textContent =
+                data.session.user.email || "Logged in";
+        }
+
+        return true;
+    }
+
+
+    /* =====================================================
+       LOAD SUBJECTS
+    ====================================================== */
+
+    async function loadSubjects() {
+
+        const container =
+            document.getElementById("subjectsContainer");
+
+        container.innerHTML =
+            '<div class="loading">Loading subjects...</div>';
+
+        try {
+
+            /*
+             * The logged-in user's session is automatically
+             * sent by Supabase with this request.
+             */
+
+            const { data, error } =
+                await db
+                    .from("subjects")
+                    .select("id,name,code,created_at")
+                    .order("name", {
+                        ascending: true
+                    });
+
+            if (error) {
+                throw error;
+            }
+
+            allSubjects = data || [];
+
+            displaySubjects(allSubjects);
+
+        } catch (error) {
+
+            console.error(
+                "SUBJECT LOAD ERROR:",
+                error
+            );
+
+            container.innerHTML = `
+                <div class="error-box">
+                    <strong>❌ Unable to load subjects</strong>
+                    <p style="margin-top:8px;">
+                        ${escapeHTML(error.message)}
+                    </p>
+
+                    <button
+                        type="button"
+                        id="retryButton"
+                        style="
+                            margin-top:12px;
+                            padding:10px 18px;
+                            border:none;
+                            border-radius:8px;
+                            background:#2563eb;
+                            color:white;
+                            cursor:pointer;
+                        ">
+                        🔄 Try Again
+                    </button>
+                </div>
+            `;
+
+            document
+                .getElementById("retryButton")
+                .addEventListener(
+                    "click",
+                    loadSubjects
+                );
+        }
+    }
+
+
+    /* =====================================================
+       DISPLAY SUBJECTS
+    ====================================================== */
+
+    function displaySubjects(subjects) {
+
+        const container =
+            document.getElementById("subjectsContainer");
+
+        if (!subjects || subjects.length === 0) {
+
+            container.innerHTML = `
+                <div class="empty">
+                    <h3>📚 No subjects found</h3>
+                    <p style="margin-top:8px;">
+                        Add your first subject above.
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML = "";
+
+        subjects.forEach(function (subject) {
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "subject-card";
+
+
+            const title =
+                document.createElement("h4");
+
+            title.textContent =
+                "📚 " +
+                (subject.name || "Unnamed Subject");
+
+
+            const code =
+                document.createElement("p");
+
+            code.innerHTML =
+                "<strong>Code:</strong> " +
+                escapeHTML(subject.code || "N/A");
+
+
+            const editButton =
+                document.createElement("button");
+
+            editButton.type = "button";
+
+            editButton.textContent =
+                "✏️ Edit";
+
+            editButton.className =
+                "edit-button";
+
+            editButton.addEventListener(
+                "click",
+                function () {
+                    editSubject(subject);
+                }
+            );
+
+
+            const deleteButton =
+                document.createElement("button");
+
+            deleteButton.type = "button";
+
+            deleteButton.textContent =
+                "🗑️ Delete";
+
+            deleteButton.className =
+                "delete-button";
+
+            deleteButton.addEventListener(
+                "click",
+                function () {
+                    deleteSubject(subject.id);
+                }
+            );
+
+
+            card.appendChild(title);
+
+            card.appendChild(code);
+
+            card.appendChild(editButton);
+
+            card.appendChild(deleteButton);
+
+            container.appendChild(card);
+        });
+    }
+
+
+    /* =====================================================
+       ADD / UPDATE SUBJECT
+    ====================================================== */
+
+    document
+        .getElementById("subjectForm")
+        .addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                const id =
+                    document.getElementById(
+                        "subjectId"
+                    ).value;
+
+                const name =
+                    document.getElementById(
+                        "subjectName"
+                    ).value.trim();
+
+                const code =
+                    document.getElementById(
+                        "subjectCode"
+                    ).value.trim();
+
+
+                if (!name) {
+
+                    showMessage(
+                        "Please enter the subject name.",
+                        false
+                    );
+
+                    return;
+                }
+
+
+                const saveButton =
+                    document.getElementById(
+                        "saveButton"
+                    );
+
+                saveButton.disabled = true;
+
+                saveButton.textContent =
+                    id
+                        ? "Saving changes..."
+                        : "Adding subject...";
+
+
+                try {
+
+                    const subjectData = {
+                        name: name,
+                        code: code || null
+                    };
+
+
+                    if (id) {
+
+                        const { error } =
+                            await db
+                                .from("subjects")
+                                .update(subjectData)
+                                .eq("id", id);
+
+                        if (error) {
+                            throw error;
+                        }
+
+                        showMessage(
+                            "✅ Subject updated successfully!"
+                        );
+
+                    } else {
+
+                        const { error } =
+                            await db
+                                .from("subjects")
+                                .insert(subjectData);
+
+                        if (error) {
+                            throw error;
+                        }
+
+                        showMessage(
+                            "✅ Subject added successfully!"
+                        );
+                    }
+
+
+                    resetForm();
+
+                    await loadSubjects();
+
+                } catch (error) {
+
+                    console.error(
+                        "SUBJECT SAVE ERROR:",
+                        error
+                    );
+
+                    showMessage(
+                        "❌ Error saving subject: " +
+                        error.message,
+                        false
+                    );
+
+                } finally {
+
+                    saveButton.disabled = false;
+
+                    if (
+                        !document.getElementById(
+                            "subjectId"
+                        ).value
+                    ) {
+
+                        saveButton.textContent =
+                            "➕ Add Subject";
+                    }
+                }
+            }
+        );
+
+
+    /* =====================================================
+       EDIT SUBJECT
+    ====================================================== */
+
+    function editSubject(subject) {
+
+        document.getElementById(
+            "subjectId"
+        ).value = subject.id;
+
+        document.getElementById(
+            "subjectName"
+        ).value = subject.name || "";
+
+        document.getElementById(
+            "subjectCode"
+        ).value = subject.code || "";
+
+        document.getElementById(
+            "formTitle"
+        ).textContent =
+            "✏️ Edit Subject";
+
+        document.getElementById(
+            "saveButton"
+        ).textContent =
+            "💾 Save Changes";
+
+        document.getElementById(
+            "cancelButton"
+        ).style.display =
+            "block";
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+
+    /* =====================================================
+       CANCEL EDIT
+    ====================================================== */
+
+    document
+        .getElementById("cancelButton")
+        .addEventListener(
+            "click",
+            function () {
+
+                resetForm();
+
+                const message =
+                    document.getElementById(
+                        "message"
+                    );
+
+                message.style.display =
+                    "none";
+            }
+        );
+
+
+    /* =====================================================
+       DELETE SUBJECT
+    ====================================================== */
+
+    async function deleteSubject(id) {
+
+        const subject =
+            allSubjects.find(function (item) {
+                return String(item.id) === String(id);
+            });
+
+        const name =
+            subject?.name || "this subject";
+
+
+        if (
+            !confirm(
+                "Are you sure you want to delete " +
+                name +
+                "?"
+            )
+        ) {
+            return;
+        }
+
+
+        try {
+
+            const { error } =
+                await db
+                    .from("subjects")
+                    .delete()
+                    .eq("id", id);
+
+            if (error) {
+                throw error;
+            }
+
+            showMessage(
+                "✅ Subject deleted successfully!"
+            );
+
+            await loadSubjects();
+
+        } catch (error) {
+
+            console.error(
+                "SUBJECT DELETE ERROR:",
+                error
+            );
+
+            showMessage(
+                "❌ Error deleting subject: " +
+                error.message,
+                false
+            );
+        }
+    }
+
+
+    /* =====================================================
+       SEARCH
+    ====================================================== */
+
+    document
+        .getElementById("searchSubject")
+        .addEventListener(
+            "input",
+            function () {
+
+                const search =
+                    this.value
+                        .trim()
+                        .toLowerCase();
+
+                if (!search) {
+
+                    displaySubjects(
+                        allSubjects
+                    );
+
+                    return;
+                }
+
+
+                const filtered =
+                    allSubjects.filter(
+                        function (subject) {
+
+                            const name =
+                                String(
+                                    subject.name || ""
+                                ).toLowerCase();
+
+                            const code =
+                                String(
+                                    subject.code || ""
+                                ).toLowerCase();
+
+                            return (
+                                name.includes(search) ||
+                                code.includes(search)
+                            );
+                        }
+                    );
+
+
+                displaySubjects(filtered);
+            }
+        );
+
+
+    /* =====================================================
+       BACK BUTTON
+    ====================================================== */
+
+    document
+        .getElementById("backButton")
+        .addEventListener(
+            "click",
+            function () {
+
+                if (window.history.length > 1) {
+
+                    window.history.back();
+
+                } else {
+
+                    window.location.href =
+                        "index.html";
+                }
+            }
+        );
+
+
+    /* =====================================================
+       INITIALIZE PAGE
+    ====================================================== */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        async function () {
+
+            const loggedIn =
+                await loadUser();
+
+            if (!loggedIn) {
+                return;
+            }
+
+            await loadSubjects();
+        }
+    );
+
+</script>
+
+</body>
+</html>

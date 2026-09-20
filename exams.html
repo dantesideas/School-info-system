@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Exams & Marks - School Information System</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div>
+        <h1>My School</h1>
+        <p>School Information System</p>
+    </div>
+
+    <button type="button" onclick="goBack()">←</button>
+
+</header>
+
+
+<nav class="main-menu">
+
+    <a href="dashboard.html">🏠 Dashboard</a>
+
+    <a href="students.html">👨‍🎓 Students</a>
+
+    <a href="teachers.html">👨‍🏫 Teachers</a>
+
+    <a href="classes.html">🏫 Classes</a>
+
+    <a href="subjects.html">📚 Subjects</a>
+
+    <a href="attendance.html">📋 Attendance</a>
+
+    <a href="exams.html" class="active">
+        📝 Exams & Marks
+    </a>
+
+    <a href="fees.html">💰 Fees</a>
+
+    <a href="reports.html">📊 Reports</a>
+
+    <a href="#">⚙️ Settings</a>
+
+</nav>
+
+
+<main>
+
+
+<section class="welcome">
+
+    <h2>Exams & Marks</h2>
+
+    <p>
+        Create exams and record student marks.
+    </p>
+
+</section>
+
+
+
+<!-- =====================================================
+     CREATE EXAM
+===================================================== -->
+
+<section class="teacher-form">
+
+    <h3>📝 Create Exam</h3>
+
+
+    <label for="examType">
+        Exam Type
+    </label>
+
+    <select id="examType">
+
+        <option value="">
+            Select Exam Type
+        </option>
+
+        <option value="Opening Exam">
+            Opening Exam
+        </option>
+
+        <option value="Midterm Exam">
+            Midterm Exam
+        </option>
+
+        <option value="End Term Exam">
+            End Term Exam
+        </option>
+
+    </select>
+
+
+    <label for="examDate">
+        Exam Date
+    </label>
+
+    <input
+        type="date"
+        id="examDate"
+    >
+
+
+    <label for="examTerm">
+        Term
+    </label>
+
+    <select id="examTerm">
+
+        <option value="">
+            Select Term
+        </option>
+
+        <option value="Term 1">
+            Term 1
+        </option>
+
+        <option value="Term 2">
+            Term 2
+        </option>
+
+        <option value="Term 3">
+            Term 3
+        </option>
+
+    </select>
+
+
+    <button
+        type="button"
+        class="save-btn"
+        id="createExamButton">
+
+        ➕ Create Exam
+
+    </button>
+
+
+    <p id="examMessage"></p>
+
+</section>
+
+
+
+<!-- =====================================================
+     ENTER MARKS
+===================================================== -->
+
+<section class="teacher-form">
+
+    <h3>📚 Enter Marks</h3>
+
+
+    <label for="examSelect">
+        Exam
+    </label>
+
+    <select id="examSelect">
+
+        <option value="">
+            Loading exams...
+        </option>
+
+    </select>
+
+
+    <label for="classSelect">
+        Class
+    </label>
+
+    <select id="classSelect">
+
+        <option value="">
+            Loading classes...
+        </option>
+
+    </select>
+
+
+    <label for="subjectSelect">
+        Subject
+    </label>
+
+    <select id="subjectSelect">
+
+        <option value="">
+            Loading subjects...
+        </option>
+
+    </select>
+
+
+    <button
+        type="button"
+        class="save-btn"
+        id="loadStudentsButton">
+
+        👨‍🎓 Load Students
+
+    </button>
+
+
+    <p id="marksMessage"></p>
+
+</section>
+
+
+
+<!-- =====================================================
+     MARKS
+===================================================== -->
+
+<section class="teacher-list">
+
+    <h3>
+        📊 Student Marks
+    </h3>
+
+
+    <div id="marksContainer">
+
+        Select an exam, class and subject.
+
+    </div>
+
+</section>
+
+
+<section
+    id="saveMarksSection"
+    class="teacher-form"
+    style="display:none;"
+>
+
+    <
+      <button
+    type="button"
+    class="save-btn"
+    id="saveMarksButton"
+    onclick="saveMarks()">
+
+    💾 Save Marks
+
+</button>
+
+</section>
+
+
+
+<!-- =====================================================
+     EXISTING EXAMS
+===================================================== -->
+
+<section class="teacher-list">
+
+    <h3>
+        📝 Existing Exams
+    </h3>
+
+
+    <div id="examList">
+
+        Loading exams...
+
+    </div>
+
+</section>
+
+
+</main>
+
+
+
+<script>
+
+/* =====================================================
+   SUPABASE CONFIGURATION
+===================================================== */
+
+const SUPABASE_URL =
+    "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+
+const SUPABASE_ANON_KEY =
+    "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+
+let supabaseClient = null;
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let allExams = [];
+
+let allClasses = [];
+
+let allSubjects = [];
+
+let currentStudents = [];
+
+
+
+/* =====================================================
+   INITIALIZE SUPABASE
+===================================================== */
+
+try {
+
+    if (
+        !window.supabase ||
+        !window.supabase.createClient
+    ) {
+
+        throw new Error(
+            "Supabase library failed to load."
+        );
+
+    }
+
+
+    supabaseClient =
+        window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY
+        );
+
+}
+
+catch (error) {
+
+    console.error(
+        "SUPABASE INITIALIZATION ERROR:",
+        error
+    );
+
+}
+
+
+
+/* =====================================================
+   BACK
+===================================================== */
+
+function goBack() {
+
+    window.history.back();
+
+}
+
+
+
+/* =====================================================
+   TODAY
+===================================================== */
+
+function setToday() {
+
+    const input =
+        document.getElementById(
+            "examDate"
+        );
+
+
+    const today =
+        new Date();
+
+
+    const year =
+        today.getFullYear();
+
+
+    const month =
+        String(
+            today.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    const day =
+        String(
+            today.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    input.value =
+        year +
+        "-" +
+        month +
+        "-" +
+        day;
+
+}
+
+
+
+/* =====================================================
+   MESSAGES
+===================================================== */
+
+function showExamMessage(
+    message,
+    success = true
+) {
+
+    const box =
+        document.getElementById(
+            "examMessage"
+        );
+
+
+    box.textContent =
+        message;
+
+
+    box.style.color =
+        success
+            ? "green"
+            : "red";
+
+}
+
+
+
+function showMarksMessage(
+    message,
+    success = true
+) {
+
+    const box =
+        document.getElementById(
+            "marksMessage"
+        );
+
+
+    box.textContent =
+        message;
+
+
+    box.style.color =
+        success
+            ? "green"
+            : "red";
+
+}
+
+
+
+/* =====================================================
+   LOAD EXAMS
+===================================================== */
+
+async function loadExams() {
+
+    const select =
+        document.getElementById(
+            "examSelect"
+        );
+
+
+    const list =
+        document.getElementById(
+            "examList"
+        );
+
+
+    select.innerHTML =
+        '<option value="">Loading exams...</option>';
+
+
+    try {
+
+        const result =
+            await supabaseClient
+                .from("exams")
+                .select(
+                    "id,name,exam_date,term"
+                )
+                .order(
+                    "exam_date",
+                    {
+                        ascending: false
+                    }
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        allExams =
+            result.data || [];
+
+
+        select.innerHTML =
+            '<option value="">Select exam</option>';
+
+
+        allExams.forEach(
+            function(exam) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    exam.id;
+
+
+                option.textContent =
+                    exam.name +
+                    " - " +
+                    (
+                        exam.term ||
+                        "No term"
+                    ) +
+                    " - " +
+                    (
+                        exam.exam_date ||
+                        "No date"
+                    );
+
+
+                select.appendChild(
+                    option
+                );
+
+            }
+        );
+
+
+        if (
+            allExams.length === 0
+        ) {
+
+            list.innerHTML = `
+
+                <div style="
+                    padding:20px;
+                    text-align:center;
+                ">
+
+                    <h3>
+                        📝 No exams created
+                    </h3>
+
+                    <p>
+                        Create your first exam above.
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            "";
+
+
+        allExams.forEach(
+            function(exam) {
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                card.className =
+                    "teacher-card";
+
+
+                card.innerHTML = `
+
+                    <h4>
+                        📝
+                        ${escapeHTML(
+                            exam.name
+                        )}
+                    </h4>
+
+
+                    <p>
+
+                        <strong>
+                            📅 Date:
+                        </strong>
+
+                        ${escapeHTML(
+                            exam.exam_date ||
+                            "Not specified"
+                        )}
+
+                    </p>
+
+
+                    <p>
+
+                        <strong>
+                            📚 Term:
+                        </strong>
+
+                        ${escapeHTML(
+                            exam.term ||
+                            "Not specified"
+                        )}
+
+                    </p>
+
+                `;
+
+
+                list.appendChild(
+                    card
+                );
+
+            }
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "EXAM LOAD ERROR:",
+            error
+        );
+
+
+        select.innerHTML =
+            '<option value="">Unable to load exams</option>';
+
+
+        list.innerHTML = `
+
+            <p style="color:red;">
+
+                Unable to load exams:
+
+                ${escapeHTML(
+                    error.message
+                )}
+
+            </p>
+
+        `;
+
+    }
+
+}
+
+
+
+/* =====================================================
+   LOAD CLASSES
+===================================================== */
+
+async function loadClasses() {
+
+    const select =
+        document.getElementById(
+            "classSelect"
+        );
+
+
+    try {
+
+        const result =
+            await supabaseClient
+                .from("classes")
+                .select(
+                    "id,name,section"
+                )
+                .order(
+                    "name",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        allClasses =
+            result.data || [];
+
+
+        select.innerHTML =
+            '<option value="">Select class</option>';
+
+
+        allClasses.forEach(
+            function(item) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    item.id;
+
+
+                option.textContent =
+                    item.name +
+                    (
+                        item.section
+                            ? " - " +
+                              item.section
+                            : ""
+                    );
+
+
+                select.appendChild(
+                    option
+                );
+
+            }
+        );
+
+
+        if (
+            allClasses.length === 0
+        ) {
+
+            select.innerHTML =
+                '<option value="">No classes found</option>';
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "CLASS LOAD ERROR:",
+            error
+        );
+
+
+        select.innerHTML =
+            '<option value="">Unable to load classes</option>';
+
+    }
+
+}
+
+
+
+/* =====================================================
+   LOAD SUBJECTS
+===================================================== */
+
+async function loadSubjects() {
+
+    const select =
+        document.getElementById(
+            "subjectSelect"
+        );
+
+
+    try {
+
+        const result =
+            await supabaseClient
+                .from("subjects")
+                .select(
+                    "id,name,code"
+                )
+                .order(
+                    "name",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        allSubjects =
+            result.data || [];
+
+
+        select.innerHTML =
+            '<option value="">Select subject</option>';
+
+
+        allSubjects.forEach(
+            function(subject) {
+
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+
+                option.value =
+                    subject.id;
+
+
+                option.textContent =
+                    subject.name +
+                    (
+                        subject.code
+                            ? " (" +
+                              subject.code +
+                              ")"
+                            : ""
+                    );
+
+
+                select.appendChild(
+                    option
+                );
+
+            }
+        );
+
+
+        if (
+            allSubjects.length === 0
+        ) {
+
+            select.innerHTML =
+                '<option value="">No subjects found</option>';
+
+        }
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "SUBJECT LOAD ERROR:",
+            error
+        );
+
+
+        select.innerHTML =
+            '<option value="">Unable to load subjects</option>';
+
+    }
+
+}
+
+
+
+/* =====================================================
+   CREATE EXAM
+===================================================== */
+
+async function createExam() {
+
+    const examType =
+        document.getElementById(
+            "examType"
+        ).value;
+
+
+    const date =
+        document.getElementById(
+            "examDate"
+        ).value;
+
+
+    const term =
+        document.getElementById(
+            "examTerm"
+        ).value;
+
+
+    if (!examType) {
+
+        showExamMessage(
+            "Please select an exam type.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    if (!date) {
+
+        showExamMessage(
+            "Please select the exam date.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    if (!term) {
+
+        showExamMessage(
+            "Please select the term.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * Check if the same exam type
+     * already exists for this term.
+     */
+
+    showExamMessage(
+        "Checking existing exams..."
+    );
+
+
+    try {
+
+        const checkResult =
+            await supabaseClient
+                .from("exams")
+                .select(
+                    "id,name,term"
+                )
+                .eq(
+                    "name",
+                    examType
+                )
+                .eq(
+                    "term",
+                    term
+                );
+
+
+        if (checkResult.error) {
+
+            throw checkResult.error;
+
+        }
+
+
+        if (
+            checkResult.data &&
+            checkResult.data.length > 0
+        ) {
+
+            showExamMessage(
+                examType +
+                " already exists for " +
+                term +
+                ".",
+                false
+            );
+
+            return;
+
+        }
+
+
+        showExamMessage(
+            "Creating exam..."
+        );
+
+
+        const result =
+            await supabaseClient
+                .from("exams")
+                .insert([
+
+                    {
+
+                        name:
+                            examType,
+
+                        exam_date:
+                            date,
+
+                        term:
+                            term
+
+                    }
+
+                ]);
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        showExamMessage(
+            examType +
+            " for " +
+            term +
+            " created successfully! ✓"
+        );
+
+
+        /*
+         * Reset exam type and term.
+         */
+
+        document.getElementById(
+            "examType"
+        ).value = "";
+
+
+        document.getElementById(
+            "examTerm"
+        ).value = "";
+
+
+        setToday();
+
+
+        await loadExams();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "CREATE EXAM ERROR:",
+            error
+        );
+
+
+        showExamMessage(
+            "Error creating exam: " +
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   LOAD STUDENTS FOR MARKS
+===================================================== */
+
+async function loadStudentsForMarks() {
+
+    const examId =
+        document.getElementById(
+            "examSelect"
+        ).value;
+
+
+    const classId =
+        document.getElementById(
+            "classSelect"
+        ).value;
+
+
+    const subjectId =
+        document.getElementById(
+            "subjectSelect"
+        ).value;
+
+
+    const container =
+        document.getElementById(
+            "marksContainer"
+        );
+
+
+    if (!examId) {
+
+        showMarksMessage(
+            "Please select an exam.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    if (!classId) {
+
+        showMarksMessage(
+            "Please select a class.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    if (!subjectId) {
+
+        showMarksMessage(
+            "Please select a subject.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        "<p>Loading students and marks...</p>";
+
+
+    document.getElementById(
+        "saveMarksSection"
+    ).style.display =
+        "none";
+
+
+    try {
+
+        /*
+         * Load students in selected class.
+         */
+
+        const studentResult =
+            await supabaseClient
+                .from("students")
+                .select(
+                    "id,admission_no,name,class_id"
+                )
+                .eq(
+                    "class_id",
+                    classId
+                )
+                .order(
+                    "name",
+                    {
+                        ascending: true
+                    }
+                );
+
+
+        if (studentResult.error) {
+
+            throw studentResult.error;
+
+        }
+
+
+        currentStudents =
+            studentResult.data || [];
+
+
+        if (
+            currentStudents.length === 0
+        ) {
+
+            container.innerHTML = `
+
+                <div style="
+                    padding:20px;
+                    text-align:center;
+                ">
+
+                    <h3>
+                        👨‍🎓 No students found
+                    </h3>
+
+                    <p>
+                        There are no students
+                        assigned to this class.
+                    </p>
+
+                </div>
+
+            `;
+
+            return;
+
+        }
+
+
+        /*
+         * Load existing marks.
+         */
+
+        const marksResult =
+            await supabaseClient
+                .from("marks")
+                .select(
+                    "id,student_id,marks"
+                )
+                .eq(
+                    "exam_id",
+                    examId
+                )
+                .eq(
+                    "class_id",
+                    classId
+                )
+                .eq(
+                    "subject_id",
+                    subjectId
+                );
+
+
+        if (marksResult.error) {
+
+            throw marksResult.error;
+
+        }
+
+
+        const existingMarks = {};
+
+
+        (
+            marksResult.data ||
+            []
+        ).forEach(
+            function(mark) {
+
+                existingMarks[
+                    String(
+                        mark.student_id
+                    )
+                ] =
+                    mark.marks;
+
+            }
+        );
+
+
+        displayMarks(
+            currentStudents,
+            existingMarks
+        );
+
+
+        document.getElementById(
+            "saveMarksSection"
+        ).style.display =
+            "block";
+
+
+        showMarksMessage(
+            currentStudents.length +
+            " student(s) loaded."
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "LOAD MARKS ERROR:",
+            error
+        );
+
+
+        container.innerHTML = `
+
+            <p style="color:red;">
+
+                Unable to load students:
+
+                ${escapeHTML(
+                    error.message
+                )}
+
+            </p>
+
+        `;
+
+    }
+
+}
+
+
+
+/* =====================================================
+   DISPLAY MARKS
+===================================================== */
+
+function displayMarks(
+    students,
+    existingMarks
+) {
+
+    const container =
+        document.getElementById(
+            "marksContainer"
+        );
+
+
+    let html = `
+
+        <div style="
+            overflow-x:auto;
+        ">
+
+            <table style="
+                width:100%;
+                border-collapse:collapse;
+            ">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="padding:10px;">
+                            #
+                        </th>
+
+                        <th style="padding:10px;">
+                            Admission No.
+                        </th>
+
+                        <th style="padding:10px;">
+                            Student
+                        </th>
+
+                        <th style="padding:10px;">
+                            Marks / 100
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+    `;
+
+
+    students.forEach(
+        function(student, index) {
+
+            const saved =
+                existingMarks[
+                    String(
+                        student.id
+                    )
+                ];
+
+
+            html += `
+
+                <tr>
+
+                    <td style="
+                        padding:10px;
+                        text-align:center;
+                    ">
+
+                        ${index + 1}
+
+                    </td>
+
+
+                    <td style="
+                        padding:10px;
+                    ">
+
+                        ${escapeHTML(
+                            student.admission_no ||
+                            "N/A"
+                        )}
+
+                    </td>
+
+
+                    <td style="
+                        padding:10px;
+                    ">
+
+                        <strong>
+
+                            ${escapeHTML(
+                                student.name
+                            )}
+
+                        </strong>
+
+                    </td>
+
+
+                    <td style="
+                        padding:10px;
+                    ">
+
+                        <input
+                            type="number"
+                            class="student-mark"
+                            data-student-id="${student.id}"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value="${
+                                saved !==
+                                undefined &&
+                                saved !==
+                                null
+                                    ? saved
+                                    : ""
+                            }"
+                            placeholder="0 - 100"
+                            style="
+                                width:100px;
+                                padding:8px;
+                            "
+                        >
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+    );
+
+
+    html += `
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+
+    container.innerHTML =
+        html;
+
+}
+
+
+
+/* =====================================================
+   SAVE MARKS
+===================================================== */
+
+async function saveMarks() {
+
+    const examId =
+        document.getElementById(
+            "examSelect"
+        ).value;
+
+
+    const classId =
+        document.getElementById(
+            "classSelect"
+        ).value;
+
+
+    const subjectId =
+        document.getElementById(
+            "subjectSelect"
+        ).value;
+
+
+    if (
+        !examId ||
+        !classId ||
+        !subjectId
+    ) {
+
+        showMarksMessage(
+            "Please select exam, class and subject.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    const inputs =
+        document.querySelectorAll(
+            ".student-mark"
+        );
+
+
+    if (
+        inputs.length === 0
+    ) {
+
+        showMarksMessage(
+            "No students loaded.",
+            false
+        );
+
+        return;
+
+    }
+
+
+    showMarksMessage(
+        "Saving marks..."
+    );
+
+
+    try {
+
+        /*
+         * Delete existing marks for this
+         * exam + class + subject.
+         */
+
+        const deleteResult =
+            await supabaseClient
+                .from("marks")
+                .delete()
+                .eq(
+                    "exam_id",
+                    examId
+                )
+                .eq(
+                    "class_id",
+                    classId
+                )
+                .eq(
+                    "subject_id",
+                    subjectId
+                );
+
+
+        if (deleteResult.error) {
+
+            throw deleteResult.error;
+
+        }
+
+
+        const records = [];
+
+
+        for (
+            const input
+            of inputs
+        ) {
+
+            const value =
+                input.value.trim();
+
+
+            if (value === "") {
+
+                continue;
+
+            }
+
+
+            const marks =
+                Number(value);
+
+
+            if (
+                Number.isNaN(marks) ||
+                marks < 0 ||
+                marks > 100
+            ) {
+
+                throw new Error(
+                    "Marks must be between 0 and 100."
+                );
+
+            }
+
+
+            records.push({
+
+                exam_id:
+                    Number(examId),
+
+                student_id:
+                    Number(
+                        input.dataset.studentId
+                    ),
+
+                class_id:
+                    Number(classId),
+
+                subject_id:
+                    Number(subjectId),
+
+                marks:
+                    marks
+
+            });
+
+        }
+
+
+        if (
+            records.length === 0
+        ) {
+
+            showMarksMessage(
+                "No marks were entered.",
+                false
+            );
+
+            return;
+
+        }
+
+
+        const result =
+            await supabaseClient
+                .from("marks")
+                .insert(
+                    records
+                );
+
+
+        if (result.error) {
+
+            throw result.error;
+
+        }
+
+
+        showMarksMessage(
+            records.length +
+            " mark(s) saved successfully! ✓"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "SAVE MARKS ERROR:",
+            error
+        );
+
+
+        showMarksMessage(
+            "Error saving marks: " +
+            error.message,
+            false
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
+
+function escapeHTML(
+    value
+) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
+document
+    .getElementById(
+        "createExamButton"
+    )
+    .addEventListener(
+        "click",
+        createExam
+    );
+
+
+document
+    .getElementById(
+        "loadStudentsButton"
+    )
+    .addEventListener(
+        "click",
+        loadStudentsForMarks
+    );
+
+
+document
+    .getElementById(
+        "saveMarksButton"
+    )
+    .addEventListener(
+        "click",
+        saveMarks
+    );
+
+
+
+/* =====================================================
+   START PAGE
+===================================================== */
+
+async function startPage() {
+
+    if (!supabaseClient) {
+
+        document.getElementById(
+            "examList"
+        ).innerHTML = `
+
+            <p style="color:red;">
+
+                Supabase could not be initialized.
+
+            </p>
+
+        `;
+
+        return;
+
+    }
+
+
+    setToday();
+
+
+    await loadExams();
+
+    await loadClasses();
+
+    await loadSubjects();
+
+}
+
+
+startPage();
+
+</script>
+
+</body>
+
+</html>
