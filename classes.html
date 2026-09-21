@@ -1,997 +1,1562 @@
-<!DOCTYPE html>
-<html lang="en">
+<header class="topbar">
+    <div>
+        <h1>My School</h1>
+        <p>School Information System</p>
+    </div>
+    <button type="button" id="backButton">←</button>
+</header>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classes - School Information System</title>
+<nav class="main-menu">
+    <a href="dashboard.html">🏠 Dashboard</a>
+    <a href="students.html">👨‍🎓 Students</a>
+    <a href="teachers.html">👨‍🏫 Teachers</a>
+    <a href="classes.html" class="active">🏫 Classes</a>
+    <a href="subjects.html">📚 Subjects</a>
+    <a href="attendance.html">📋 Attendance</a>
+    <a href="exams.html">📝 Exams & Marks</a>
+    <a href="fees.html">💰 Fees</a>
+    <a href="reports.html">📊 Reports</a>
+    <a href="#">⚙️ Settings</a>
+</nav>
 
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-    </script>
+<main>
 
-    <style>
-        /* ========== RESET & BASE ========== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+    <section class="welcome">
+        <h2>Class Management</h2>
+        <p>Manage classes, class teachers and students.</p>
+    </section>
 
-        body {
-            background: #f1f5f9;
-            color: #1e293b;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
+    <!-- =====================================================
+    ADD / EDIT CLASS
+    ===================================================== -->
 
-        /* ========== TOPBAR ========== */
-        .topbar {
-            background: #0f172a;
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            border-bottom: 4px solid #3b82f6;
-        }
+    <section class="teacher-form">
+        <h3 id="formTitle">Add Class</h3>
 
-        .topbar h1 {
-            font-size: 24px;
-            font-weight: 700;
-        }
+        <form id="classForm">
 
-        .topbar p {
-            font-size: 14px;
-            color: #94a3b8;
-        }
+            <input type="hidden" id="classId">
 
-        #backButton {
-            background: #334155;
-            border: none;
-            color: white;
-            font-size: 24px;
-            padding: 5px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+            <label for="className">Class / Grade</label>
+            <input type="text"
+                   id="className"
+                   placeholder="Example: Grade 4"
+                   required>
 
-        #backButton:hover {
-            background: #475569;
-        }
+            <label for="section">Section</label>
+            <input type="text"
+                   id="section"
+                   placeholder="Example: A">
 
-        /* ========== NAVIGATION ========== */
-        .main-menu {
-            background: white;
-            padding: 12px 30px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-        }
+            <label for="teacherId">Class Teacher</label>
 
-        .main-menu a {
-            text-decoration: none;
-            color: #475569;
-            font-weight: 500;
-            font-size: 15px;
-            padding: 6px 0;
-            border-bottom: 3px solid transparent;
-            transition: 0.2s;
-        }
+            <select id="teacherId">
+                <option value="">Loading teachers...</option>
+            </select>
 
-        .main-menu a:hover {
-            color: #0f172a;
-            border-bottom-color: #94a3b8;
-        }
+            <button type="submit"
+                    class="save-btn"
+                    id="saveButton">
+                Add Class
+            </button>
 
-        .main-menu a.active {
-            color: #2563eb;
-            border-bottom-color: #2563eb;
-        }
+            <button type="button"
+                    id="cancelButton">
+                Cancel Edit
+            </button>
 
-        /* ========== MAIN CONTAINER ========== */
-        main {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px;
-            width: 100%;
-            flex: 1;
-        }
+        </form>
 
-        .welcome {
-            margin-bottom: 30px;
-        }
+        <p id="message"></p>
 
-        .welcome h2 {
-            font-size: 28px;
-            font-weight: 700;
-            color: #0f172a;
-        }
+    </section>
 
-        .welcome p {
-            color: #64748b;
-            margin-top: 4px;
-        }
+    <!-- =====================================================
+    SEARCH
+    ===================================================== -->
 
-        /* ========== FORMS / CARDS ========== */
-        .teacher-form,
-        .teacher-list {
-            background: white;
-            border-radius: 16px;
-            padding: 25px 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e2e8f0;
-        }
+    <section class="teacher-form">
 
-        .teacher-form h3,
-        .teacher-list h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 18px;
-            color: #0f172a;
-        }
+        <h3>🔍 Search Classes</h3>
 
-        label {
-            display: block;
-            font-weight: 500;
-            font-size: 14px;
-            margin: 14px 0 4px 0;
-            color: #334155;
-        }
+        <input type="search"
+               id="searchClass"
+               placeholder="Search class, section or teacher...">
 
-        input,
-        select {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 15px;
-            background: #f8fafc;
-            transition: 0.2s;
-        }
+    </section>
 
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-            background: white;
-        }
+    <!-- =====================================================
+    CLASS LIST
+    ===================================================== -->
 
-        .save-btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 18px;
-            transition: 0.2s;
-            width: 100%;
-        }
+    <section class="teacher-list">
 
-        .save-btn:hover:not(:disabled) {
-            background: #1d4ed8;
-            transform: scale(1.01);
-        }
+        <h3>🏫 Classes</h3>
 
-        .save-btn:disabled {
-            background: #93b4f5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        #cancelButton {
-            background: #e2e8f0;
-            color: #1e293b;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            display: none;
-        }
-
-        #cancelButton:hover {
-            background: #cbd5e1;
-        }
-
-        #message {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 500;
-            display: none;
-            background: #f1f5f9;
-        }
-
-        /* ========== SEARCH ========== */
-        #searchClass {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            font-size: 15px;
-        }
-
-        /* ========== CLASS CARDS ========== */
-        .teacher-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 20px 24px;
-            margin-bottom: 16px;
-            transition: 0.2s;
-        }
-
-        .teacher-card:hover {
-            border-color: #94a3b8;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-        }
-
-        .teacher-card h4 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 8px;
-        }
-
-        .teacher-card p {
-            color: #475569;
-            margin: 4px 0;
-            font-size: 15px;
-        }
-
-        .teacher-card button {
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
-            margin: 6px 6px 6px 0;
-            transition: 0.2s;
-        }
-
-        .view-students-button {
-            background: #e0f2fe;
-            color: #0369a1;
-        }
-
-        .view-students-button:hover {
-            background: #bae6fd;
-        }
-
-        .edit-class-button {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .edit-class-button:hover {
-            background: #fde68a;
-        }
-
-        .delete-class-button {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .delete-class-button:hover {
-            background: #fecaca;
-        }
-
-        .teacher-card .student-list-inner {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 12px;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 600px) {
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-
-            .main-menu {
-                justify-content: center;
-            }
-
-            .teacher-form,
-            .teacher-list {
-                padding: 18px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <header class="topbar">
-        <div>
-            <h1>My School</h1>
-            <p>School Information System</p>
+        <div id="classesContainer">
+            Connecting to Supabase...
         </div>
-        <button type="button" id="backButton">←</button>
-    </header>
 
-    <nav class="main-menu">
-        <a href="dashboard.html">🏠 Dashboard</a>
-        <a href="students.html">👨‍🎓 Students</a>
-        <a href="teachers.html">👨‍🏫 Teachers</a>
-        <a href="classes.html" class="active">🏫 Classes</a>
-        <a href="subjects.html">📚 Subjects</a>
-        <a href="attendance.html">📋 Attendance</a>
-        <a href="exams.html">📝 Exams & Marks</a>
-        <a href="fees.html">💰 Fees</a>
-        <a href="reports.html">📊 Reports</a>
-        <a href="#">⚙️ Settings</a>
-    </nav>
+    </section>
 
-    <main>
+</main>
 
-        <section class="welcome">
-            <h2>Class Management</h2>
-            <p>Manage classes, class teachers and students.</p>
-        </section>
+<script>
 
-        <!-- =====================================================
-        ADD / EDIT CLASS
-        ===================================================== -->
+    /* =====================================================
+       SUPABASE CONFIGURATION
+    ===================================================== */
 
-        <section class="teacher-form">
-            <h3 id="formTitle">Add Class</h3>
-            <form id="classForm">
-                <input type="hidden" id="classId">
+    const SUPABASE_URL =
+        "https://aqrdzpvxfkatqwbfnbor.supabase.co";
 
-                <label for="className">Class / Grade</label>
-                <input type="text" id="className" placeholder="Example: Grade 4" required>
+    const SUPABASE_ANON_KEY =
+        "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
 
-                <label for="section">Section</label>
-                <input type="text" id="section" placeholder="Example: A">
+    let supabaseClient = null;
 
-                <label for="teacherId">Class Teacher</label>
-                <select id="teacherId">
-                    <option value="">Loading teachers...</option>
-                </select>
+    let allClasses = [];
+    let allTeachers = [];
+    let allStudents = [];
 
-                <button type="submit" class="save-btn" id="saveButton">Add Class</button>
-                <button type="button" id="cancelButton">Cancel Edit</button>
-            </form>
-            <p id="message"></p>
-        </section>
+    /* IDs of class detail panels currently expanded. */
+    const openStudentPanels = new Set();
 
-        <!-- =====================================================
-        SEARCH
-        ===================================================== -->
+    /* Prevents double-click from firing two deletes. */
+    let isDeleting = false;
 
-        <section class="teacher-form">
-            <h3>🔍 Search Classes</h3>
-            <input type="search" id="searchClass" placeholder="Search class, section or teacher...">
-        </section>
 
-        <!-- =====================================================
-        CLASS LIST
-        ===================================================== -->
+    /* =====================================================
+       INITIALIZE SUPABASE
+    ===================================================== */
 
-        <section class="teacher-list">
-            <h3>🏫 Classes</h3>
-            <div id="classesContainer">
-                Connecting to Supabase...
-            </div>
-        </section>
+    try {
 
-    </main>
+        if (!window.supabase ||
+            !window.supabase.createClient) {
 
-    <script>
-        /* =====================================================
-           SUPABASE CONFIGURATION
-        ===================================================== */
+            throw new Error(
+                "Supabase library failed to load."
+            );
+        }
 
-        const SUPABASE_URL =
-            "https://aqrdzpvxfkatqwbfnbor.supabase.co";
-
-        const SUPABASE_ANON_KEY =
-            "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
-
-        let supabaseClient = null;
-        let allClasses = [];
-        let allTeachers = [];
-        let allStudents = [];
-
-        /* IDs of class detail panels that are currently expanded.
-           Kept outside the DOM so they survive re-renders. */
-        const openStudentPanels = new Set();
-
-        /* Prevents a double-click from firing two deletes. */
-        let isDeleting = false;
-
-        /* =====================================================
-           INITIALIZE SUPABASE
-        ===================================================== */
-
-        try {
-            if (!window.supabase || !window.supabase.createClient) {
-                throw new Error("Supabase library failed to load.");
-            }
-            supabaseClient = window.supabase.createClient(
+        supabaseClient =
+            window.supabase.createClient(
                 SUPABASE_URL,
                 SUPABASE_ANON_KEY
             );
-        } catch (error) {
-            console.error("SUPABASE INITIALIZATION ERROR:", error);
-            supabaseClient = null;
-        }
 
-        /* =====================================================
-           BACK BUTTON
-        ===================================================== */
+    } catch (error) {
 
-        document.getElementById("backButton").addEventListener("click", function() {
-            window.history.back();
-        });
+        console.error(
+            "SUPABASE INITIALIZATION ERROR:",
+            error
+        );
 
-        /* =====================================================
-           MESSAGE
-        ===================================================== */
+        supabaseClient = null;
+    }
 
-        function showMessage(message, success = true) {
-            const box = document.getElementById("message");
-            if (!box) return;
-            box.textContent = message;
-            box.style.display = "block";
-            box.style.color = success ? "green" : "red";
-            box.style.background = success ? "#f0fdf4" : "#fef2f2";
-        }
 
-        /* =====================================================
-           ESCAPE HTML (Prevent XSS)
-        ===================================================== */
+    /* =====================================================
+       BACK BUTTON
+    ===================================================== */
 
-        function escapeHTML(text) {
-            if (!text) return "";
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
-        }
+    document
+        .getElementById("backButton")
+        .addEventListener(
+            "click",
+            function() {
+                window.history.back();
+            }
+        );
 
-        /* =====================================================
-           FORM MODE HELPERS
-        ===================================================== */
 
-        function setFormMode(isEdit) {
-            const saveButton = document.getElementById("saveButton");
-            document.getElementById("formTitle").textContent =
-                isEdit ? "Edit Class" : "Add Class";
-            saveButton.textContent = isEdit ? "Update Class" : "Add Class";
-            saveButton.disabled = false;
-            document.getElementById("cancelButton").style.display =
-                isEdit ? "inline-block" : "none";
-        }
+    /* =====================================================
+       MESSAGE
+    ===================================================== */
 
-        function resetForm() {
-            document.getElementById("classForm").reset();
-            document.getElementById("classId").value = "";
-            setFormMode(false);
-        }
+    function showMessage(
+        message,
+        success = true
+    ) {
 
-        /* =====================================================
-           SORT CLASSES NUMERICALLY ("Grade 2" before "Grade 10")
-        ===================================================== */
+        const box =
+            document.getElementById("message");
 
-        function sortClasses(list) {
-            return list.slice().sort(function(a, b) {
-                const byName = String(a.name || "").localeCompare(
-                    String(b.name || ""), undefined, {
-                        numeric: true,
-                        sensitivity: "base"
-                    }
-                );
-                if (byName !== 0) return byName;
-                return String(a.section || "").localeCompare(
-                    String(b.section || ""), undefined, {
-                        numeric: true,
-                        sensitivity: "base"
-                    }
-                );
-            });
-        }
+        if (!box) return;
 
-        /* =====================================================
-           LOAD TEACHERS
-        ===================================================== */
+        box.textContent = message;
 
-        async function loadTeachers() {
-            const select = document.getElementById("teacherId");
-            select.innerHTML = '<option value="">Loading teachers...</option>';
-            try {
-                const result = await supabaseClient
+        box.style.display = "block";
+
+        box.style.color =
+            success ? "green" : "red";
+
+        box.style.background =
+            success ? "#f0fdf4" : "#fef2f2";
+    }
+
+
+    /* =====================================================
+       ESCAPE HTML
+    ===================================================== */
+
+    function escapeHTML(text) {
+
+        if (!text) return "";
+
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+
+        return String(text).replace(
+            /[&<>"']/g,
+            function(m) {
+                return map[m];
+            }
+        );
+    }
+
+
+    /* =====================================================
+       FORM MODE HELPERS
+    ===================================================== */
+
+    function setFormMode(isEdit) {
+
+        const saveButton =
+            document.getElementById("saveButton");
+
+        document.getElementById("formTitle")
+            .textContent =
+            isEdit ? "Edit Class" : "Add Class";
+
+        saveButton.textContent =
+            isEdit ? "Update Class" : "Add Class";
+
+        saveButton.disabled = false;
+
+        document.getElementById("cancelButton")
+            .style.display =
+            isEdit ? "inline-block" : "none";
+    }
+
+
+    function resetForm() {
+
+        document
+            .getElementById("classForm")
+            .reset();
+
+        document.getElementById("classId")
+            .value = "";
+
+        setFormMode(false);
+    }
+
+
+    /* =====================================================
+       SORT CLASSES
+    ===================================================== */
+
+    function sortClasses(list) {
+
+        return list.slice().sort(
+            function(a, b) {
+
+                const byName =
+                    String(a.name || "")
+                    .localeCompare(
+                        String(b.name || ""),
+                        undefined,
+                        {
+                            numeric: true,
+                            sensitivity: "base"
+                        }
+                    );
+
+                if (byName !== 0)
+                    return byName;
+
+                return String(a.section || "")
+                    .localeCompare(
+                        String(b.section || ""),
+                        undefined,
+                        {
+                            numeric: true,
+                            sensitivity: "base"
+                        }
+                    );
+            }
+        );
+    }
+
+
+    /* =====================================================
+       LOAD TEACHERS
+    ===================================================== */
+
+    async function loadTeachers() {
+
+        const select =
+            document.getElementById("teacherId");
+
+        select.innerHTML =
+            '<option value="">Loading teachers...</option>';
+
+        try {
+
+            const result =
+                await supabaseClient
                     .from("teachers")
                     .select("id,name,subject");
 
-                if (result.error) throw result.error;
+            if (result.error)
+                throw result.error;
 
-                allTeachers = result.data || [];
+            allTeachers =
+                result.data || [];
 
-                if (allTeachers.length === 0) {
-                    select.innerHTML = '<option value="">No teachers found</option>';
-                    return;
-                }
+            if (allTeachers.length === 0) {
 
-                select.innerHTML = '<option value="">Select class teacher</option>';
+                select.innerHTML =
+                    '<option value="">No teachers found</option>';
 
-                allTeachers.forEach(function(teacher) {
-                    const option = document.createElement("option");
-                    option.value = teacher.id;
-                    option.textContent = teacher.subject ?
-                        teacher.name + " — " + teacher.subject :
-                        teacher.name;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error("TEACHER LOAD ERROR:", error);
-                select.innerHTML = '<option value="">Unable to load teachers</option>';
-                showMessage("Unable to load teachers: " + error.message, false);
-            }
-        }
-
-        /* =====================================================
-           LOAD STUDENTS
-        ===================================================== */
-
-        async function loadStudents() {
-            try {
-                const result = await supabaseClient
-                    .from("students")
-                    .select("id,admission_no,name,class_id");
-
-                if (result.error) throw result.error;
-                allStudents = result.data || [];
-            } catch (error) {
-                console.error("STUDENT LOAD ERROR:", error);
-                allStudents = [];
-            }
-        }
-
-        /* =====================================================
-           GET TEACHER NAME
-        ===================================================== */
-
-        function getTeacherName(teacherId) {
-            const teacher = allTeachers.find(function(item) {
-                return String(item.id) === String(teacherId);
-            });
-            if (!teacher) return "Not assigned";
-            return teacher.name || "Unnamed teacher";
-        }
-
-        /* =====================================================
-           BUILD THE EXPANDED STUDENT PANEL
-        ===================================================== */
-
-        function buildClassDetailsHTML(classId) {
-            const classItem = allClasses.find(function(item) {
-                return String(item.id) === String(classId);
-            });
-            if (!classItem) return "";
-
-            const students = allStudents.filter(function(student) {
-                return String(student.class_id) === String(classId);
-            });
-
-            let html = `
-                <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
-                    <h3>${escapeHTML(classItem.name || "")} ${classItem.section ? "- " + escapeHTML(classItem.section) : ""}</h3>
-                    <p><strong>Class Teacher:</strong> ${escapeHTML(getTeacherName(classItem.teacher_id))}</p>
-                    <p><strong>Total Students:</strong> ${students.length}</p>
-            `;
-
-            if (students.length === 0) {
-                html += `<p>No students are assigned to this class yet.</p>`;
-            } else {
-                html += `<h4>Students</h4>`;
-                students.forEach(function(student, index) {
-                    html += `
-                        <div style="padding:10px; margin-bottom:6px; background:white; border-radius:6px; border:1px solid #e2e8f0;">
-                            <strong>${index + 1}. ${escapeHTML(student.name || "")}</strong><br>
-                            Admission: ${escapeHTML(student.admission_no || "N/A")}
-                        </div>
-                    `;
-                });
-            }
-
-            html += `</div>`;
-            return html;
-        }
-
-        /* =====================================================
-           TOGGLE CLASS STUDENTS PANEL
-        ===================================================== */
-
-        function toggleClassDetails(rawClassId) {
-            const classId = String(rawClassId);
-            const box = document.getElementById("details-" + classId);
-            if (!box) return;
-
-            const card = box.closest(".teacher-card");
-            const button = card ? card.querySelector(".view-students-button") : null;
-
-            if (openStudentPanels.has(classId)) {
-                openStudentPanels.delete(classId);
-                box.innerHTML = "";
-                box.style.display = "none";
-                if (button) button.textContent = "👥 View Students";
-            } else {
-                openStudentPanels.add(classId);
-                box.innerHTML = buildClassDetailsHTML(classId);
-                box.style.display = "block";
-                if (button) button.textContent = "🙈 Hide Students";
-            }
-        }
-
-        /* =====================================================
-           DISPLAY CLASSES
-        ===================================================== */
-
-        function displayClasses(classes) {
-            const container = document.getElementById("classesContainer");
-
-            if (!classes || classes.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align:center; padding:25px;">
-                        <h3>🏫 No classes found</h3>
-                        <p>Add your first class above.</p>
-                    </div>
-                `;
                 return;
             }
 
-            container.innerHTML = "";
+            select.innerHTML =
+                '<option value="">Select class teacher</option>';
 
-            classes.forEach(function(classItem) {
-                const classId = String(classItem.id);
+            allTeachers.forEach(
+                function(teacher) {
 
-                const students = allStudents.filter(function(student) {
-                    return String(student.class_id) === classId;
-                });
+                    const option =
+                        document.createElement("option");
 
-                const isOpen = openStudentPanels.has(classId);
+                    option.value =
+                        teacher.id;
 
-                const card = document.createElement("div");
-                card.className = "teacher-card";
+                    option.textContent =
+                        teacher.subject ?
+                        teacher.name +
+                        " — " +
+                        teacher.subject :
+                        teacher.name;
 
-                const className = escapeHTML(classItem.name || "");
-                const section = classItem.section ? " - " + escapeHTML(classItem.section) : "";
-                const teacherName = escapeHTML(getTeacherName(classItem.teacher_id));
+                    select.appendChild(option);
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "TEACHER LOAD ERROR:",
+                error
+            );
+
+            select.innerHTML =
+                '<option value="">Unable to load teachers</option>';
+
+            showMessage(
+                "Unable to load teachers: " +
+                error.message,
+                false
+            );
+        }
+    }
+
+
+    /* =====================================================
+       LOAD STUDENTS
+    ===================================================== */
+
+    async function loadStudents() {
+
+        try {
+
+            const result =
+                await supabaseClient
+                    .from("students")
+                    .select(
+                        "id,admission_no,name,class_id"
+                    );
+
+            if (result.error)
+                throw result.error;
+
+            allStudents =
+                result.data || [];
+
+        } catch (error) {
+
+            console.error(
+                "STUDENT LOAD ERROR:",
+                error
+            );
+
+            allStudents = [];
+        }
+    }
+
+
+    /* =====================================================
+       GET TEACHER NAME
+    ===================================================== */
+
+    function getTeacherName(teacherId) {
+
+        const teacher =
+            allTeachers.find(
+                function(item) {
+                    return String(item.id) ===
+                        String(teacherId);
+                }
+            );
+
+        if (!teacher)
+            return "Not assigned";
+
+        return teacher.name ||
+            "Unnamed teacher";
+    }
+
+
+    /* =====================================================
+       FIND EXISTING CLASS FOR TEACHER
+       
+       This is the new restriction:
+       one teacher can only be Class Teacher
+       of one class.
+    ===================================================== */
+
+    function findTeacherClass(
+        teacherId,
+        currentClassId = ""
+    ) {
+
+        if (!teacherId)
+            return null;
+
+        return allClasses.find(
+            function(classItem) {
+
+                /* Ignore the class currently being edited. */
+                if (
+                    currentClassId &&
+                    String(classItem.id) ===
+                    String(currentClassId)
+                ) {
+                    return false;
+                }
+
+                return (
+                    classItem.teacher_id &&
+                    String(classItem.teacher_id) ===
+                    String(teacherId)
+                );
+            }
+        ) || null;
+    }
+
+
+    /* =====================================================
+       CHECK CLASS TEACHER ASSIGNMENT
+       
+       Returns true if the teacher can be assigned.
+    ===================================================== */
+
+    function canAssignTeacher(
+        teacherId,
+        currentClassId = ""
+    ) {
+
+        if (!teacherId)
+            return true;
+
+        const existingClass =
+            findTeacherClass(
+                teacherId,
+                currentClassId
+            );
+
+        if (!existingClass)
+            return true;
+
+        const classLabel =
+            String(existingClass.name || "Unnamed class") +
+            (
+                existingClass.section
+                    ? " - " +
+                      String(existingClass.section)
+                    : ""
+            );
+
+        const teacherName =
+            getTeacherName(teacherId);
+
+        showMessage(
+            "❌ " +
+            teacherName +
+            " is already assigned as Class Teacher for " +
+            classLabel +
+            ". A teacher can only be Class Teacher for one class.",
+            false
+        );
+
+        return false;
+    }
+
+
+    /* =====================================================
+       BUILD EXPANDED STUDENT PANEL
+    ===================================================== */
+
+    function buildClassDetailsHTML(classId) {
+
+        const classItem =
+            allClasses.find(
+                function(item) {
+                    return String(item.id) ===
+                        String(classId);
+                }
+            );
+
+        if (!classItem)
+            return "";
+
+        const students =
+            allStudents.filter(
+                function(student) {
+                    return String(student.class_id) ===
+                        String(classId);
+                }
+            );
+
+        let html = `
+            <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0;">
+                <h3>
+                    ${escapeHTML(classItem.name || "")}
+                    ${
+                        classItem.section
+                        ? "- " +
+                          escapeHTML(classItem.section)
+                        : ""
+                    }
+                </h3>
+
+                <p>
+                    <strong>Class Teacher:</strong>
+                    ${escapeHTML(
+                        getTeacherName(
+                            classItem.teacher_id
+                        )
+                    )}
+                </p>
+
+                <p>
+                    <strong>Total Students:</strong>
+                    ${students.length}
+                </p>
+        `;
+
+        if (students.length === 0) {
+
+            html += `
+                <p>
+                    No students are assigned to
+                    this class yet.
+                </p>
+            `;
+
+        } else {
+
+            html += `<h4>Students</h4>`;
+
+            students.forEach(
+                function(student, index) {
+
+                    html += `
+                        <div style="padding:10px; margin-bottom:6px; background:white; border-radius:6px; border:1px solid #e2e8f0;">
+
+                            <strong>
+                                ${index + 1}.
+                                ${escapeHTML(
+                                    student.name || ""
+                                )}
+                            </strong>
+
+                            <br>
+
+                            Admission:
+                            ${escapeHTML(
+                                student.admission_no ||
+                                "N/A"
+                            )}
+
+                        </div>
+                    `;
+                }
+            );
+        }
+
+        html += `</div>`;
+
+        return html;
+    }
+
+
+    /* =====================================================
+       TOGGLE CLASS STUDENTS PANEL
+    ===================================================== */
+
+    function toggleClassDetails(rawClassId) {
+
+        const classId =
+            String(rawClassId);
+
+        const box =
+            document.getElementById(
+                "details-" + classId
+            );
+
+        if (!box)
+            return;
+
+        const card =
+            box.closest(".teacher-card");
+
+        const button =
+            card ?
+            card.querySelector(
+                ".view-students-button"
+            ) :
+            null;
+
+        if (openStudentPanels.has(classId)) {
+
+            openStudentPanels.delete(
+                classId
+            );
+
+            box.innerHTML = "";
+
+            box.style.display = "none";
+
+            if (button)
+                button.textContent =
+                    "👥 View Students";
+
+        } else {
+
+            openStudentPanels.add(
+                classId
+            );
+
+            box.innerHTML =
+                buildClassDetailsHTML(
+                    classId
+                );
+
+            box.style.display =
+                "block";
+
+            if (button)
+                button.textContent =
+                    "🙈 Hide Students";
+        }
+    }
+
+
+    /* =====================================================
+       DISPLAY CLASSES
+    ===================================================== */
+
+    function displayClasses(classes) {
+
+        const container =
+            document.getElementById(
+                "classesContainer"
+            );
+
+        if (!classes ||
+            classes.length === 0) {
+
+            container.innerHTML = `
+                <div style="text-align:center; padding:25px;">
+
+                    <h3>
+                        🏫 No classes found
+                    </h3>
+
+                    <p>
+                        Add your first class above.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+        }
+
+        container.innerHTML = "";
+
+        classes.forEach(
+            function(classItem) {
+
+                const classId =
+                    String(classItem.id);
+
+                const students =
+                    allStudents.filter(
+                        function(student) {
+                            return String(
+                                student.class_id
+                            ) === classId;
+                        }
+                    );
+
+                const isOpen =
+                    openStudentPanels.has(
+                        classId
+                    );
+
+                const card =
+                    document.createElement(
+                        "div"
+                    );
+
+                card.className =
+                    "teacher-card";
+
+                const className =
+                    escapeHTML(
+                        classItem.name || ""
+                    );
+
+                const section =
+                    classItem.section
+                    ? " - " +
+                      escapeHTML(
+                          classItem.section
+                      )
+                    : "";
+
+                const teacherName =
+                    escapeHTML(
+                        getTeacherName(
+                            classItem.teacher_id
+                        )
+                    );
 
                 card.innerHTML = `
-                    <h4>🏫 ${className} ${section}</h4>
-                    <p><strong>👨‍🏫 Class Teacher:</strong> ${teacherName}</p>
-                    <p><strong>👨‍🎓 Students:</strong> ${students.length}</p>
+                    <h4>
+                        🏫 ${className} ${section}
+                    </h4>
 
-                    <button type="button" class="view-students-button" data-id="${escapeHTML(classId)}">${isOpen ? "🙈 Hide Students" : "👥 View Students"}</button>
-                    <button type="button" class="edit-class-button" data-id="${escapeHTML(classId)}">✏️ Edit</button>
-                    <button type="button" class="delete-class-button" data-id="${escapeHTML(classId)}">🗑️ Delete</button>
+                    <p>
+                        <strong>
+                            👨‍🏫 Class Teacher:
+                        </strong>
+                        ${teacherName}
+                    </p>
 
-                    <div id="details-${escapeHTML(classId)}" style="display:none; margin-top:15px;"></div>
+                    <p>
+                        <strong>
+                            👨‍🎓 Students:
+                        </strong>
+                        ${students.length}
+                    </p>
+
+                    <button
+                        type="button"
+                        class="view-students-button"
+                        data-id="${escapeHTML(classId)}">
+
+                        ${
+                            isOpen
+                            ? "🙈 Hide Students"
+                            : "👥 View Students"
+                        }
+
+                    </button>
+
+                    <button
+                        type="button"
+                        class="edit-class-button"
+                        data-id="${escapeHTML(classId)}">
+
+                        ✏️ Edit
+
+                    </button>
+
+                    <button
+                        type="button"
+                        class="delete-class-button"
+                        data-id="${escapeHTML(classId)}">
+
+                        🗑️ Delete
+
+                    </button>
+
+                    <div
+                        id="details-${escapeHTML(classId)}"
+                        style="display:none; margin-top:15px;">
+                    </div>
                 `;
 
                 container.appendChild(card);
-            });
+            }
+        );
 
-            /* Restore any panels that were open before this re-render. */
-            openStudentPanels.forEach(function(classId) {
-                const box = document.getElementById("details-" + classId);
-                if (!box) return;
-                box.innerHTML = buildClassDetailsHTML(classId);
-                box.style.display = "block";
-            });
 
-            // Attach event listeners
-            container.querySelectorAll(".view-students-button").forEach(function(button) {
-                button.addEventListener("click", function() {
-                    toggleClassDetails(this.dataset.id);
-                });
-            });
+        /* Restore open panels after re-render. */
 
-            container.querySelectorAll(".edit-class-button").forEach(function(button) {
-                button.addEventListener("click", function() {
-                    editClass(this.dataset.id);
-                });
-            });
+        openStudentPanels.forEach(
+            function(classId) {
 
-            container.querySelectorAll(".delete-class-button").forEach(function(button) {
-                button.addEventListener("click", function() {
-                    deleteClass(this.dataset.id);
-                });
-            });
-        }
+                const box =
+                    document.getElementById(
+                        "details-" + classId
+                    );
 
-        /* =====================================================
-           LOAD CLASSES
-        ===================================================== */
+                if (!box)
+                    return;
 
-        async function loadClasses() {
-            const container = document.getElementById("classesContainer");
-            container.innerHTML = "<p>Loading classes...</p>";
+                box.innerHTML =
+                    buildClassDetailsHTML(
+                        classId
+                    );
 
-            try {
-                const result = await supabaseClient
+                box.style.display =
+                    "block";
+            }
+        );
+
+
+        /* Attach event listeners. */
+
+        container
+            .querySelectorAll(
+                ".view-students-button"
+            )
+            .forEach(
+                function(button) {
+
+                    button.addEventListener(
+                        "click",
+                        function() {
+
+                            toggleClassDetails(
+                                this.dataset.id
+                            );
+                        }
+                    );
+                }
+            );
+
+
+        container
+            .querySelectorAll(
+                ".edit-class-button"
+            )
+            .forEach(
+                function(button) {
+
+                    button.addEventListener(
+                        "click",
+                        function() {
+
+                            editClass(
+                                this.dataset.id
+                            );
+                        }
+                    );
+                }
+            );
+
+
+        container
+            .querySelectorAll(
+                ".delete-class-button"
+            )
+            .forEach(
+                function(button) {
+
+                    button.addEventListener(
+                        "click",
+                        function() {
+
+                            deleteClass(
+                                this.dataset.id
+                            );
+                        }
+                    );
+                }
+            );
+    }
+
+
+    /* =====================================================
+       LOAD CLASSES
+    ===================================================== */
+
+    async function loadClasses() {
+
+        const container =
+            document.getElementById(
+                "classesContainer"
+            );
+
+        container.innerHTML =
+            "<p>Loading classes...</p>";
+
+        try {
+
+            const result =
+                await supabaseClient
                     .from("classes")
                     .select("*")
-                    .order("name", { ascending: true });
+                    .order(
+                        "name",
+                        {
+                            ascending: true
+                        }
+                    );
 
-                if (result.error) throw result.error;
+            if (result.error)
+                throw result.error;
 
-                allClasses = sortClasses(result.data || []);
-                await loadStudents();
-                displayClasses(allClasses);
+            allClasses =
+                sortClasses(
+                    result.data || []
+                );
 
-            } catch (error) {
-                console.error("CLASS LOAD ERROR:", error);
-                container.innerHTML = `
-                    <div style="padding:20px; text-align:center;">
-                        <h3 style="color:red;">Unable to load classes</h3>
-                        <p>${escapeHTML(error.message)}</p>
-                        <button type="button" id="retryClassesButton" style="padding:10px 20px; border:none; background:#2563eb; color:white; border-radius:8px; cursor:pointer;">🔄 Try Again</button>
-                    </div>
-                `;
-                const retryButton = document.getElementById("retryClassesButton");
-                if (retryButton) {
-                    retryButton.addEventListener("click", loadClasses);
-                }
+            await loadStudents();
+
+            displayClasses(
+                allClasses
+            );
+
+        } catch (error) {
+
+            console.error(
+                "CLASS LOAD ERROR:",
+                error
+            );
+
+            container.innerHTML = `
+                <div style="padding:20px; text-align:center;">
+
+                    <h3 style="color:red;">
+                        Unable to load classes
+                    </h3>
+
+                    <p>
+                        ${escapeHTML(
+                            error.message
+                        )}
+                    </p>
+
+                    <button
+                        type="button"
+                        id="retryClassesButton"
+                        style="padding:10px 20px; border:none; background:#2563eb; color:white; border-radius:8px; cursor:pointer;">
+
+                        🔄 Try Again
+
+                    </button>
+
+                </div>
+            `;
+
+            const retryButton =
+                document.getElementById(
+                    "retryClassesButton"
+                );
+
+            if (retryButton) {
+
+                retryButton.addEventListener(
+                    "click",
+                    loadClasses
+                );
             }
         }
+    }
 
-        /* =====================================================
-           SEARCH CLASSES (debounced)
-        ===================================================== */
 
-        let searchTimer = null;
+    /* =====================================================
+       SEARCH CLASSES
+    ===================================================== */
 
-        document.getElementById("searchClass").addEventListener("input", function() {
-            const value = this.value;
+    let searchTimer = null;
 
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(function() {
-                const search = value.toLowerCase().trim();
+    document
+        .getElementById("searchClass")
+        .addEventListener(
+            "input",
+            function() {
 
-                if (!search) {
-                    displayClasses(allClasses);
+                const value =
+                    this.value;
+
+                clearTimeout(
+                    searchTimer
+                );
+
+                searchTimer =
+                    setTimeout(
+                        function() {
+
+                            const search =
+                                value
+                                .toLowerCase()
+                                .trim();
+
+                            if (!search) {
+
+                                displayClasses(
+                                    allClasses
+                                );
+
+                                return;
+                            }
+
+                            const filtered =
+                                allClasses.filter(
+                                    function(item) {
+
+                                        const teacherName =
+                                            getTeacherName(
+                                                item.teacher_id
+                                            );
+
+                                        return (
+
+                                            String(
+                                                item.name ||
+                                                ""
+                                            )
+                                            .toLowerCase()
+                                            .includes(
+                                                search
+                                            ) ||
+
+                                            String(
+                                                item.section ||
+                                                ""
+                                            )
+                                            .toLowerCase()
+                                            .includes(
+                                                search
+                                            ) ||
+
+                                            String(
+                                                teacherName ||
+                                                ""
+                                            )
+                                            .toLowerCase()
+                                            .includes(
+                                                search
+                                            )
+                                        );
+                                    }
+                                );
+
+                            displayClasses(
+                                filtered
+                            );
+
+                        },
+                        200
+                    );
+            }
+        );
+
+
+    /* =====================================================
+       ADD / UPDATE CLASS
+       
+       IMPORTANT:
+       Before saving, we check whether the selected
+       teacher is already the Class Teacher of another
+       class.
+    ===================================================== */
+
+    document
+        .getElementById("classForm")
+        .addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                if (!supabaseClient) {
+
+                    showMessage(
+                        "❌ Not connected to the database. Please reload the page.",
+                        false
+                    );
+
                     return;
                 }
 
-                const filtered = allClasses.filter(function(item) {
-                    const teacherName = getTeacherName(item.teacher_id);
-                    return (
-                        String(item.name || "").toLowerCase().includes(search) ||
-                        String(item.section || "").toLowerCase().includes(search) ||
-                        String(teacherName || "").toLowerCase().includes(search)
+                const id =
+                    document
+                        .getElementById(
+                            "classId"
+                        )
+                        .value;
+
+                const name =
+                    document
+                        .getElementById(
+                            "className"
+                        )
+                        .value
+                        .trim();
+
+                const section =
+                    document
+                        .getElementById(
+                            "section"
+                        )
+                        .value
+                        .trim();
+
+                const teacherId =
+                    document
+                        .getElementById(
+                            "teacherId"
+                        )
+                        .value;
+
+                const isEdit =
+                    Boolean(id);
+
+
+                if (!name) {
+
+                    showMessage(
+                        "Please enter a class name.",
+                        false
                     );
-                });
 
-                displayClasses(filtered);
-            }, 200);
-        });
-
-        /* =====================================================
-           ADD / UPDATE CLASS (FORM SUBMISSION)
-        ===================================================== */
-
-        document.getElementById("classForm").addEventListener("submit", async function(event) {
-            event.preventDefault();
-
-            if (!supabaseClient) {
-                showMessage("❌ Not connected to the database. Please reload the page.", false);
-                return;
-            }
-
-            const id = document.getElementById("classId").value;
-            const name = document.getElementById("className").value.trim();
-            const section = document.getElementById("section").value.trim();
-            const teacherId = document.getElementById("teacherId").value;
-            const isEdit = Boolean(id);
-
-            if (!name) {
-                showMessage("Please enter a class name.", false);
-                return;
-            }
-
-            /* Prevent double-submit. */
-            const saveButton = document.getElementById("saveButton");
-            saveButton.disabled = true;
-            saveButton.textContent = isEdit ? "Updating…" : "Adding…";
-
-            try {
-                const payload = {
-                    name: name,
-                    section: section || null,
-                    teacher_id: teacherId || null
-                };
-
-                let result;
-
-                if (isEdit) {
-                    result = await supabaseClient
-                        .from("classes")
-                        .update(payload)
-                        .eq("id", id)
-                        .select();
-                } else {
-                    result = await supabaseClient
-                        .from("classes")
-                        .insert([payload])
-                        .select();
+                    return;
                 }
 
-                if (result.error) throw result.error;
 
-                /* RLS silently filters rows instead of erroring — verify. */
-                if (!result.data || result.data.length === 0) {
-                    throw new Error(isEdit ?
-                        "No class was updated. It may have been deleted, or your account lacks permission." :
-                        "The class was not created. Your account may lack permission.");
+                /* =================================================
+                   NEW RESTRICTION
+                   
+                   Check BEFORE disabling/saving.
+                ================================================= */
+
+                if (
+                    teacherId &&
+                    !canAssignTeacher(
+                        teacherId,
+                        id
+                    )
+                ) {
+
+                    return;
                 }
 
-                resetForm();
-                showMessage(
-                    isEdit ?
-                    "✅ Class updated successfully!" :
-                    "✅ Class added successfully!",
-                    true
-                );
 
-                await loadClasses();
+                /* Prevent double-submit. */
 
-            } catch (error) {
-                console.error("SAVE ERROR:", error);
-                saveButton.disabled = false;
-                saveButton.textContent = isEdit ? "Update Class" : "Add Class";
-                showMessage("❌ Error saving class: " + error.message, false);
+                const saveButton =
+                    document.getElementById(
+                        "saveButton"
+                    );
+
+                saveButton.disabled =
+                    true;
+
+                saveButton.textContent =
+                    isEdit
+                    ? "Updating…"
+                    : "Adding…";
+
+
+                try {
+
+                    const payload = {
+                        name: name,
+                        section:
+                            section || null,
+                        teacher_id:
+                            teacherId || null
+                    };
+
+                    let result;
+
+
+                    if (isEdit) {
+
+                        result =
+                            await supabaseClient
+                                .from("classes")
+                                .update(
+                                    payload
+                                )
+                                .eq(
+                                    "id",
+                                    id
+                                )
+                                .select();
+
+                    } else {
+
+                        result =
+                            await supabaseClient
+                                .from("classes")
+                                .insert([
+                                    payload
+                                ])
+                                .select();
+                    }
+
+
+                    if (result.error)
+                        throw result.error;
+
+
+                    /* RLS silently filters rows instead of erroring. */
+
+                    if (
+                        !result.data ||
+                        result.data.length === 0
+                    ) {
+
+                        throw new Error(
+                            isEdit
+                            ?
+                            "No class was updated. It may have been deleted, or your account lacks permission."
+                            :
+                            "The class was not created. Your account may lack permission."
+                        );
+                    }
+
+
+                    resetForm();
+
+                    showMessage(
+                        isEdit
+                        ?
+                        "✅ Class updated successfully!"
+                        :
+                        "✅ Class added successfully!",
+                        true
+                    );
+
+                    await loadClasses();
+
+
+                } catch (error) {
+
+                    console.error(
+                        "SAVE ERROR:",
+                        error
+                    );
+
+                    saveButton.disabled =
+                        false;
+
+                    saveButton.textContent =
+                        isEdit
+                        ? "Update Class"
+                        : "Add Class";
+
+                    showMessage(
+                        "❌ Error saving class: " +
+                        error.message,
+                        false
+                    );
+                }
             }
-        });
+        );
 
-        /* =====================================================
-           EDIT CLASS (Populate Form)
-        ===================================================== */
 
-        function editClass(classId) {
-            const classItem = allClasses.find(function(item) {
-                return String(item.id) === String(classId);
-            });
-            if (!classItem) {
-                showMessage("Class not found.", false);
-                return;
-            }
+    /* =====================================================
+       EDIT CLASS
+    ===================================================== */
 
-            document.getElementById("classId").value = classItem.id;
-            document.getElementById("className").value = classItem.name || "";
-            document.getElementById("section").value = classItem.section || "";
-            document.getElementById("teacherId").value = classItem.teacher_id || "";
+    function editClass(classId) {
 
-            setFormMode(true);
+        const classItem =
+            allClasses.find(
+                function(item) {
 
-            showMessage("✏️ Editing class. Click Update to save.", true);
-            document.querySelector(".teacher-form").scrollIntoView({ behavior: "smooth" });
+                    return String(
+                        item.id
+                    ) ===
+                    String(
+                        classId
+                    );
+                }
+            );
+
+        if (!classItem) {
+
+            showMessage(
+                "Class not found.",
+                false
+            );
+
+            return;
         }
 
-        /* =====================================================
-           CANCEL EDIT
-        ===================================================== */
 
-        document.getElementById("cancelButton").addEventListener("click", function() {
-            resetForm();
-            document.getElementById("message").style.display = "none";
-        });
+        document.getElementById(
+            "classId"
+        ).value =
+            classItem.id;
 
-        /* =====================================================
-           DELETE CLASS
-        ===================================================== */
 
-        async function deleteClass(classId) {
-            if (isDeleting) return;
+        document.getElementById(
+            "className"
+        ).value =
+            classItem.name || "";
 
-            const classItem = allClasses.find(function(item) {
-                return String(item.id) === String(classId);
+
+        document.getElementById(
+            "section"
+        ).value =
+            classItem.section || "";
+
+
+        document.getElementById(
+            "teacherId"
+        ).value =
+            classItem.teacher_id || "";
+
+
+        setFormMode(true);
+
+
+        showMessage(
+            "✏️ Editing class. Click Update to save.",
+            true
+        );
+
+
+        document
+            .querySelector(
+                ".teacher-form"
+            )
+            .scrollIntoView({
+                behavior: "smooth"
             });
-            if (!classItem) return;
+    }
 
-            const label = classItem.name +
-                (classItem.section ? " - " + classItem.section : "");
 
-            const confirmDelete = window.confirm(
-                "Are you sure you want to delete the class '" + label + "'?\n\n" +
+    /* =====================================================
+       CANCEL EDIT
+    ===================================================== */
+
+    document
+        .getElementById("cancelButton")
+        .addEventListener(
+            "click",
+            function() {
+
+                resetForm();
+
+                document
+                    .getElementById(
+                        "message"
+                    )
+                    .style.display =
+                    "none";
+            }
+        );
+
+
+    /* =====================================================
+       DELETE CLASS
+    ===================================================== */
+
+    async function deleteClass(classId) {
+
+        if (isDeleting)
+            return;
+
+
+        const classItem =
+            allClasses.find(
+                function(item) {
+
+                    return String(
+                        item.id
+                    ) ===
+                    String(
+                        classId
+                    );
+                }
+            );
+
+        if (!classItem)
+            return;
+
+
+        const label =
+            classItem.name +
+            (
+                classItem.section
+                ? " - " +
+                  classItem.section
+                : ""
+            );
+
+
+        const confirmDelete =
+            window.confirm(
+                "Are you sure you want to delete the class '" +
+                label +
+                "'?\n\n" +
                 "Students in this class will NOT be deleted, but they will be unassigned from it."
             );
 
-            if (!confirmDelete) return;
 
-            isDeleting = true;
+        if (!confirmDelete)
+            return;
 
-            try {
-                /* 1. Unassign students first, so the delete can't fail on a
-                      foreign-key constraint. */
-                const unassign = await supabaseClient
+
+        isDeleting = true;
+
+
+        try {
+
+            /* 1. Unassign students first. */
+
+            const unassign =
+                await supabaseClient
                     .from("students")
-                    .update({ class_id: null })
-                    .eq("class_id", classId)
+                    .update({
+                        class_id: null
+                    })
+                    .eq(
+                        "class_id",
+                        classId
+                    )
                     .select("id");
 
-                if (unassign.error) throw unassign.error;
 
-                /* 2. Delete the class and confirm a row was actually removed. */
-                const result = await supabaseClient
+            if (unassign.error)
+                throw unassign.error;
+
+
+            /* 2. Delete the class. */
+
+            const result =
+                await supabaseClient
                     .from("classes")
                     .delete()
-                    .eq("id", classId)
+                    .eq(
+                        "id",
+                        classId
+                    )
                     .select();
 
-                if (result.error) throw result.error;
 
-                if (!result.data || result.data.length === 0) {
-                    throw new Error(
-                        "No class was deleted. It may already be gone, or your account lacks permission."
-                    );
-                }
+            if (result.error)
+                throw result.error;
 
-                openStudentPanels.delete(String(classId));
 
-                showMessage("🗑️ Class deleted successfully.", true);
-                await loadClasses();
+            if (
+                !result.data ||
+                result.data.length === 0
+            ) {
 
-            } catch (error) {
-                console.error("DELETE ERROR:", error);
-                showMessage("❌ Error deleting class: " + error.message, false);
-            } finally {
-                isDeleting = false;
+                throw new Error(
+                    "No class was deleted. It may already be gone, or your account lacks permission."
+                );
             }
-        }
 
-        /* =====================================================
-           INITIALIZE PAGE
-        ===================================================== */
 
-        async function initializePage() {
-            await loadTeachers();
+            openStudentPanels.delete(
+                String(classId)
+            );
+
+
+            showMessage(
+                "🗑️ Class deleted successfully.",
+                true
+            );
+
+
             await loadClasses();
-        }
 
-        if (supabaseClient) {
-            initializePage();
-        } else {
-            document.getElementById("teacherId").innerHTML =
-                '<option value="">Unavailable</option>';
-            document.getElementById("classesContainer").innerHTML = `
-                <div style="padding:20px; text-align:center;">
-                    <h3 style="color:#b91c1c;">Database connection failed</h3>
-                    <p>Could not initialise Supabase. Please check your connection and reload the page.</p>
-                </div>
-            `;
-        }
-    </script>
 
+        } catch (error) {
+
+            console.error(
+                "DELETE ERROR:",
+                error
+            );
+
+            showMessage(
+                "❌ Error deleting class: " +
+                error.message,
+                false
+            );
+
+        } finally {
+
+            isDeleting = false;
+        }
+    }
+
+
+    /* =====================================================
+       INITIALIZE PAGE
+    ===================================================== */
+
+    async function initializePage() {
+
+        await loadTeachers();
+
+        await loadClasses();
+    }
+
+
+    if (supabaseClient) {
+
+        initializePage();
+
+    } else {
+
+        document.getElementById(
+            "teacherId"
+        ).innerHTML =
+            '<option value="">Unavailable</option>';
+
+        document.getElementById(
+            "classesContainer"
+        ).innerHTML = `
+            <div style="padding:20px; text-align:center;">
+
+                <h3 style="color:#b91c1c;">
+                    Database connection failed
+                </h3>
+
+                <p>
+                    Could not initialise Supabase.
+                    Please check your connection
+                    and reload the page.
+                </p>
+
+            </div>
+        `;
+    }
+
+</script>
 </body>
-
 </html>
