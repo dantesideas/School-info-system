@@ -180,9 +180,15 @@
             width: 100%;
         }
 
-        .save-btn:hover {
+        .save-btn:hover:not(:disabled) {
             background: #1d4ed8;
             transform: scale(1.01);
+        }
+
+        .save-btn:disabled {
+            background: #93b4f5;
+            cursor: not-allowed;
+            transform: none;
         }
 
         #cancelButton {
@@ -265,6 +271,7 @@
             background: #e0f2fe;
             color: #0369a1;
         }
+
         .view-students-button:hover {
             background: #bae6fd;
         }
@@ -273,6 +280,7 @@
             background: #fef3c7;
             color: #b45309;
         }
+
         .edit-class-button:hover {
             background: #fde68a;
         }
@@ -281,6 +289,7 @@
             background: #fee2e2;
             color: #b91c1c;
         }
+
         .delete-class-button:hover {
             background: #fecaca;
         }
@@ -300,9 +309,11 @@
                 align-items: stretch;
                 text-align: center;
             }
+
             .main-menu {
                 justify-content: center;
             }
+
             .teacher-form,
             .teacher-list {
                 padding: 18px;
@@ -362,7 +373,7 @@
                 </select>
 
                 <button type="submit" class="save-btn" id="saveButton">Add Class</button>
-                <button type="button" id="cancelButton" style="display:none;">Cancel Edit</button>
+                <button type="button" id="cancelButton">Cancel Edit</button>
             </form>
             <p id="message"></p>
         </section>
@@ -405,6 +416,13 @@
         let allTeachers = [];
         let allStudents = [];
 
+        /* IDs of class detail panels that are currently expanded.
+           Kept outside the DOM so they survive re-renders. */
+        const openStudentPanels = new Set();
+
+        /* Prevents a double-click from firing two deletes. */
+        let isDeleting = false;
+
         /* =====================================================
            INITIALIZE SUPABASE
         ===================================================== */
@@ -419,6 +437,7 @@
             );
         } catch (error) {
             console.error("SUPABASE INITIALIZATION ERROR:", error);
+            supabaseClient = null;
         }
 
         /* =====================================================
@@ -459,6 +478,48 @@
         }
 
         /* =====================================================
+           FORM MODE HELPERS
+        ===================================================== */
+
+        function setFormMode(isEdit) {
+            const saveButton = document.getElementById("saveButton");
+            document.getElementById("formTitle").textContent =
+                isEdit ? "Edit Class" : "Add Class";
+            saveButton.textContent = isEdit ? "Update Class" : "Add Class";
+            saveButton.disabled = false;
+            document.getElementById("cancelButton").style.display =
+                isEdit ? "inline-block" : "none";
+        }
+
+        function resetForm() {
+            document.getElementById("classForm").reset();
+            document.getElementById("classId").value = "";
+            setFormMode(false);
+        }
+
+        /* =====================================================
+           SORT CLASSES NUMERICALLY ("Grade 2" before "Grade 10")
+        ===================================================== */
+
+        function sortClasses(list) {
+            return list.slice().sort(function(a, b) {
+                const byName = String(a.name || "").localeCompare(
+                    String(b.name || ""), undefined, {
+                        numeric: true,
+                        sensitivity: "base"
+                    }
+                );
+                if (byName !== 0) return byName;
+                return String(a.section || "").localeCompare(
+                    String(b.section || ""), undefined, {
+                        numeric: true,
+                        sensitivity: "base"
+                    }
+                );
+            });
+        }
+
+        /* =====================================================
            LOAD TEACHERS
         ===================================================== */
 
@@ -468,23 +529,27 @@
             try {
                 const result = await supabaseClient
                     .from("teachers")
-                    .select("id,name,phone,subject");
+                    .select("id,name,subject");
 
                 if (result.error) throw result.error;
 
                 allTeachers = result.data || [];
+
+                if (allTeachers.length === 0) {
+                    select.innerHTML = '<option value="">No teachers found</option>';
+                    return;
+                }
+
                 select.innerHTML = '<option value="">Select class teacher</option>';
 
                 allTeachers.forEach(function(teacher) {
                     const option = document.createElement("option");
                     option.value = teacher.id;
-                    option.textContent = teacher.name;
+                    option.textContent = teacher.subject ?
+                        teacher.name + " — " + teacher.subject :
+                        teacher.name;
                     select.appendChild(option);
                 });
-
-                if (allTeachers.length === 0) {
-                    select.innerHTML = '<option value="">No teachers found</option>';
-                }
             } catch (error) {
                 console.error("TEACHER LOAD ERROR:", error);
                 select.innerHTML = '<option value="">Unable to load teachers</option>';
@@ -523,90 +588,14 @@
         }
 
         /* =====================================================
-           DISPLAY CLASSES
+           BUILD THE EXPANDED STUDENT PANEL
         ===================================================== */
 
-        function displayClasses(classes) {
-            const container = document.getElementById("classesContainer");
-
-            if (!classes || classes.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align:center; padding:25px;">
-                        <h3>🏫 No classes found</h3>
-                        <p>Add your first class above.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = "";
-
-            classes.forEach(function(classItem) {
-                const classId = String(classItem.id);
-
-                const students = allStudents.filter(function(student) {
-                    return String(student.class_id) === classId;
-                });
-
-                const card = document.createElement("div");
-                card.className = "teacher-card";
-
-                const className = escapeHTML(classItem.name || "");
-                const section = classItem.section ? " - " + escapeHTML(classItem.section) : "";
-                const teacherName = escapeHTML(getTeacherName(classItem.teacher_id));
-
-                card.innerHTML = `
-                    <h4>🏫 ${className} ${section}</h4>
-                    <p><strong>👨‍🏫 Class Teacher:</strong> ${teacherName}</p>
-                    <p><strong>👨‍🎓 Students:</strong> ${students.length}</p>
-
-                    <button type="button" class="view-students-button" data-id="${escapeHTML(classId)}">👥 View Students</button>
-                    <button type="button" class="edit-class-button" data-id="${escapeHTML(classId)}">✏️ Edit</button>
-                    <button type="button" class="delete-class-button" data-id="${escapeHTML(classId)}">🗑️ Delete</button>
-
-                    <div id="details-${escapeHTML(classId)}" style="display:none; margin-top:15px;"></div>
-                `;
-
-                container.appendChild(card);
-            });
-
-            // Attach event listeners
-            container.querySelectorAll(".view-students-button").forEach(function(button) {
-                button.addEventListener("click", function() {
-                    viewClassStudents(this.dataset.id);
-                });
-            });
-
-            container.querySelectorAll(".edit-class-button").forEach(function(button) {
-                button.addEventListener("click", function() {
-                    editClass(this.dataset.id);
-                });
-            });
-
-            container.querySelectorAll(".delete-class-button").forEach(function(button) {
-                button.addEventListener("click", function() {
-                    deleteClass(this.dataset.id);
-                });
-            });
-        }
-
-        /* =====================================================
-           VIEW CLASS STUDENTS
-        ===================================================== */
-
-        function viewClassStudents(classId) {
-            const box = document.getElementById("details-" + classId);
-            if (!box) return;
-
-            if (box.style.display === "block") {
-                box.style.display = "none";
-                return;
-            }
-
+        function buildClassDetailsHTML(classId) {
             const classItem = allClasses.find(function(item) {
                 return String(item.id) === String(classId);
             });
-            if (!classItem) return;
+            if (!classItem) return "";
 
             const students = allStudents.filter(function(student) {
                 return String(student.class_id) === String(classId);
@@ -634,8 +623,110 @@
             }
 
             html += `</div>`;
-            box.innerHTML = html;
-            box.style.display = "block";
+            return html;
+        }
+
+        /* =====================================================
+           TOGGLE CLASS STUDENTS PANEL
+        ===================================================== */
+
+        function toggleClassDetails(rawClassId) {
+            const classId = String(rawClassId);
+            const box = document.getElementById("details-" + classId);
+            if (!box) return;
+
+            const card = box.closest(".teacher-card");
+            const button = card ? card.querySelector(".view-students-button") : null;
+
+            if (openStudentPanels.has(classId)) {
+                openStudentPanels.delete(classId);
+                box.innerHTML = "";
+                box.style.display = "none";
+                if (button) button.textContent = "👥 View Students";
+            } else {
+                openStudentPanels.add(classId);
+                box.innerHTML = buildClassDetailsHTML(classId);
+                box.style.display = "block";
+                if (button) button.textContent = "🙈 Hide Students";
+            }
+        }
+
+        /* =====================================================
+           DISPLAY CLASSES
+        ===================================================== */
+
+        function displayClasses(classes) {
+            const container = document.getElementById("classesContainer");
+
+            if (!classes || classes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:25px;">
+                        <h3>🏫 No classes found</h3>
+                        <p>Add your first class above.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = "";
+
+            classes.forEach(function(classItem) {
+                const classId = String(classItem.id);
+
+                const students = allStudents.filter(function(student) {
+                    return String(student.class_id) === classId;
+                });
+
+                const isOpen = openStudentPanels.has(classId);
+
+                const card = document.createElement("div");
+                card.className = "teacher-card";
+
+                const className = escapeHTML(classItem.name || "");
+                const section = classItem.section ? " - " + escapeHTML(classItem.section) : "";
+                const teacherName = escapeHTML(getTeacherName(classItem.teacher_id));
+
+                card.innerHTML = `
+                    <h4>🏫 ${className} ${section}</h4>
+                    <p><strong>👨‍🏫 Class Teacher:</strong> ${teacherName}</p>
+                    <p><strong>👨‍🎓 Students:</strong> ${students.length}</p>
+
+                    <button type="button" class="view-students-button" data-id="${escapeHTML(classId)}">${isOpen ? "🙈 Hide Students" : "👥 View Students"}</button>
+                    <button type="button" class="edit-class-button" data-id="${escapeHTML(classId)}">✏️ Edit</button>
+                    <button type="button" class="delete-class-button" data-id="${escapeHTML(classId)}">🗑️ Delete</button>
+
+                    <div id="details-${escapeHTML(classId)}" style="display:none; margin-top:15px;"></div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            /* Restore any panels that were open before this re-render. */
+            openStudentPanels.forEach(function(classId) {
+                const box = document.getElementById("details-" + classId);
+                if (!box) return;
+                box.innerHTML = buildClassDetailsHTML(classId);
+                box.style.display = "block";
+            });
+
+            // Attach event listeners
+            container.querySelectorAll(".view-students-button").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    toggleClassDetails(this.dataset.id);
+                });
+            });
+
+            container.querySelectorAll(".edit-class-button").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    editClass(this.dataset.id);
+                });
+            });
+
+            container.querySelectorAll(".delete-class-button").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    deleteClass(this.dataset.id);
+                });
+            });
         }
 
         /* =====================================================
@@ -654,7 +745,7 @@
 
                 if (result.error) throw result.error;
 
-                allClasses = result.data || [];
+                allClasses = sortClasses(result.data || []);
                 await loadStudents();
                 displayClasses(allClasses);
 
@@ -675,24 +766,34 @@
         }
 
         /* =====================================================
-           SEARCH CLASSES
+           SEARCH CLASSES (debounced)
         ===================================================== */
 
+        let searchTimer = null;
+
         document.getElementById("searchClass").addEventListener("input", function() {
-            const search = this.value.toLowerCase().trim();
-            if (!search) {
-                displayClasses(allClasses);
-                return;
-            }
-            const filtered = allClasses.filter(function(item) {
-                const teacherName = getTeacherName(item.teacher_id);
-                return (
-                    String(item.name || "").toLowerCase().includes(search) ||
-                    String(item.section || "").toLowerCase().includes(search) ||
-                    String(teacherName || "").toLowerCase().includes(search)
-                );
-            });
-            displayClasses(filtered);
+            const value = this.value;
+
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function() {
+                const search = value.toLowerCase().trim();
+
+                if (!search) {
+                    displayClasses(allClasses);
+                    return;
+                }
+
+                const filtered = allClasses.filter(function(item) {
+                    const teacherName = getTeacherName(item.teacher_id);
+                    return (
+                        String(item.name || "").toLowerCase().includes(search) ||
+                        String(item.section || "").toLowerCase().includes(search) ||
+                        String(teacherName || "").toLowerCase().includes(search)
+                    );
+                });
+
+                displayClasses(filtered);
+            }, 200);
         });
 
         /* =====================================================
@@ -702,57 +803,72 @@
         document.getElementById("classForm").addEventListener("submit", async function(event) {
             event.preventDefault();
 
+            if (!supabaseClient) {
+                showMessage("❌ Not connected to the database. Please reload the page.", false);
+                return;
+            }
+
             const id = document.getElementById("classId").value;
             const name = document.getElementById("className").value.trim();
             const section = document.getElementById("section").value.trim();
             const teacherId = document.getElementById("teacherId").value;
+            const isEdit = Boolean(id);
 
             if (!name) {
                 showMessage("Please enter a class name.", false);
                 return;
             }
 
+            /* Prevent double-submit. */
+            const saveButton = document.getElementById("saveButton");
+            saveButton.disabled = true;
+            saveButton.textContent = isEdit ? "Updating…" : "Adding…";
+
             try {
+                const payload = {
+                    name: name,
+                    section: section || null,
+                    teacher_id: teacherId || null
+                };
+
                 let result;
-                if (id) {
-                    // UPDATE
+
+                if (isEdit) {
                     result = await supabaseClient
                         .from("classes")
-                        .update({
-                            name: name,
-                            section: section || null,
-                            teacher_id: teacherId || null
-                        })
-                        .eq("id", id);
-
-                    if (result.error) throw result.error;
-                    showMessage("✅ Class updated successfully!", true);
+                        .update(payload)
+                        .eq("id", id)
+                        .select();
                 } else {
-                    // INSERT
                     result = await supabaseClient
                         .from("classes")
-                        .insert([{
-                            name: name,
-                            section: section || null,
-                            teacher_id: teacherId || null
-                        }]);
-
-                    if (result.error) throw result.error;
-                    showMessage("✅ Class added successfully!", true);
+                        .insert([payload])
+                        .select();
                 }
 
-                // Reset form
-                document.getElementById("classForm").reset();
-                document.getElementById("classId").value = "";
-                document.getElementById("formTitle").textContent = "Add Class";
-                document.getElementById("saveButton").textContent = "Add Class";
-                document.getElementById("cancelButton").style.display = "none";
+                if (result.error) throw result.error;
 
-                await loadTeachers();
+                /* RLS silently filters rows instead of erroring — verify. */
+                if (!result.data || result.data.length === 0) {
+                    throw new Error(isEdit ?
+                        "No class was updated. It may have been deleted, or your account lacks permission." :
+                        "The class was not created. Your account may lack permission.");
+                }
+
+                resetForm();
+                showMessage(
+                    isEdit ?
+                    "✅ Class updated successfully!" :
+                    "✅ Class added successfully!",
+                    true
+                );
+
                 await loadClasses();
 
             } catch (error) {
                 console.error("SAVE ERROR:", error);
+                saveButton.disabled = false;
+                saveButton.textContent = isEdit ? "Update Class" : "Add Class";
                 showMessage("❌ Error saving class: " + error.message, false);
             }
         });
@@ -775,9 +891,7 @@
             document.getElementById("section").value = classItem.section || "";
             document.getElementById("teacherId").value = classItem.teacher_id || "";
 
-            document.getElementById("formTitle").textContent = "Edit Class";
-            document.getElementById("saveButton").textContent = "Update Class";
-            document.getElementById("cancelButton").style.display = "inline-block";
+            setFormMode(true);
 
             showMessage("✏️ Editing class. Click Update to save.", true);
             document.querySelector(".teacher-form").scrollIntoView({ behavior: "smooth" });
@@ -788,11 +902,7 @@
         ===================================================== */
 
         document.getElementById("cancelButton").addEventListener("click", function() {
-            document.getElementById("classForm").reset();
-            document.getElementById("classId").value = "";
-            document.getElementById("formTitle").textContent = "Add Class";
-            document.getElementById("saveButton").textContent = "Add Class";
-            document.getElementById("cancelButton").style.display = "none";
+            resetForm();
             document.getElementById("message").style.display = "none";
         });
 
@@ -801,26 +911,52 @@
         ===================================================== */
 
         async function deleteClass(classId) {
+            if (isDeleting) return;
+
             const classItem = allClasses.find(function(item) {
                 return String(item.id) === String(classId);
             });
             if (!classItem) return;
 
+            const label = classItem.name +
+                (classItem.section ? " - " + classItem.section : "");
+
             const confirmDelete = window.confirm(
-                "Are you sure you want to delete the class '" +
-                classItem.name +
-                "'?\n\nThis will NOT delete the students, but they will be unassigned."
+                "Are you sure you want to delete the class '" + label + "'?\n\n" +
+                "Students in this class will NOT be deleted, but they will be unassigned from it."
             );
 
             if (!confirmDelete) return;
 
+            isDeleting = true;
+
             try {
+                /* 1. Unassign students first, so the delete can't fail on a
+                      foreign-key constraint. */
+                const unassign = await supabaseClient
+                    .from("students")
+                    .update({ class_id: null })
+                    .eq("class_id", classId)
+                    .select("id");
+
+                if (unassign.error) throw unassign.error;
+
+                /* 2. Delete the class and confirm a row was actually removed. */
                 const result = await supabaseClient
                     .from("classes")
                     .delete()
-                    .eq("id", classId);
+                    .eq("id", classId)
+                    .select();
 
                 if (result.error) throw result.error;
+
+                if (!result.data || result.data.length === 0) {
+                    throw new Error(
+                        "No class was deleted. It may already be gone, or your account lacks permission."
+                    );
+                }
+
+                openStudentPanels.delete(String(classId));
 
                 showMessage("🗑️ Class deleted successfully.", true);
                 await loadClasses();
@@ -828,6 +964,8 @@
             } catch (error) {
                 console.error("DELETE ERROR:", error);
                 showMessage("❌ Error deleting class: " + error.message, false);
+            } finally {
+                isDeleting = false;
             }
         }
 
@@ -840,7 +978,18 @@
             await loadClasses();
         }
 
-        initializePage();
+        if (supabaseClient) {
+            initializePage();
+        } else {
+            document.getElementById("teacherId").innerHTML =
+                '<option value="">Unavailable</option>';
+            document.getElementById("classesContainer").innerHTML = `
+                <div style="padding:20px; text-align:center;">
+                    <h3 style="color:#b91c1c;">Database connection failed</h3>
+                    <p>Could not initialise Supabase. Please check your connection and reload the page.</p>
+                </div>
+            `;
+        }
     </script>
 
 </body>
