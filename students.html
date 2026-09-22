@@ -5,508 +5,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Students - School Information System</title>
+    <title>Subjects - School Information System</title>
 
-    <!-- =====================================================
-         SUPABASE SDK
-    ====================================================== -->
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <!-- External CSS File -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- =====================================================
+         AUTHENTICATION GUARD
+    ====================================================== -->
+    <script>
+        "use strict";
+
+        const SUPABASE_URL =
+            "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+
+        const SUPABASE_PUBLISHABLE_KEY =
+            "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+
+        const authClient =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_PUBLISHABLE_KEY
+            );
+
+        /*
+         * Authentication guard.
+         * The page remains hidden until a valid session exists.
+         */
+        (async function () {
+            try {
+                const { data, error } =
+                    await authClient.auth.getSession();
+
+                if (error || !data.session) {
+                    window.location.replace("login.html");
+                    return;
+                }
+
+                document.documentElement.classList.add("authenticated");
+            } catch (error) {
+                console.error("AUTHENTICATION ERROR:", error);
+                window.location.replace("login.html");
+            }
+        })();
+
+        /*
+         * Logout
+         */
+        window.logoutUser = async function () {
+            const button =
+                document.getElementById("logoutButton");
+
+            if (button) {
+                button.disabled = true;
+                button.textContent = "Logging out...";
+            }
+
+            try {
+                const { error } =
+                    await authClient.auth.signOut();
+
+                if (error) {
+                    throw error;
+                }
+
+                window.location.replace("login.html");
+
+            } catch (error) {
+                console.error("LOGOUT ERROR:", error);
+
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = "Logout";
+                }
+
+                alert(
+                    "Logout failed.\n\n" +
+                    (error.message || "Please try again.")
+                );
+            }
+        };
+
+        authClient.auth.onAuthStateChange(
+            function (event) {
+                if (event === "SIGNED_OUT") {
+                    window.location.replace("login.html");
+                }
+            }
+        );
+    </script>
+    
+    <!-- Inline style just to hide the page until auth finishes -->
     <style>
-
-        /* =====================================================
-           RESET & BASE
-        ====================================================== */
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        html:not(.authenticated) body {
+            visibility: hidden;
         }
-
-        body {
-            background: #f1f5f9;
-            color: #1e293b;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-
-        /* =====================================================
-           TOPBAR
-        ====================================================== */
-
-        .topbar {
-            background: #0f172a;
-            color: white;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            border-bottom: 4px solid #3b82f6;
-        }
-
-        .topbar h1 {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .topbar p {
-            font-size: 14px;
-            color: #94a3b8;
-        }
-
-        #backButton {
-            background: #334155;
-            border: none;
-            color: white;
-            font-size: 24px;
-            padding: 5px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        #backButton:hover {
-            background: #475569;
-        }
-
-
-        /* =====================================================
-           NAVIGATION
-        ====================================================== */
-
-        .main-menu {
-            background: white;
-            padding: 12px 30px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-        }
-
-        .main-menu a {
-            text-decoration: none;
-            color: #475569;
-            font-weight: 500;
-            font-size: 15px;
-            padding: 6px 0;
-            border-bottom: 3px solid transparent;
-            transition: 0.2s;
-        }
-
-        .main-menu a:hover {
-            color: #0f172a;
-            border-bottom-color: #94a3b8;
-        }
-
-        .main-menu a.active {
-            color: #2563eb;
-            border-bottom-color: #2563eb;
-        }
-
-
-        /* =====================================================
-           MAIN CONTAINER
-        ====================================================== */
-
-        main {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 30px 20px;
-            width: 100%;
-            flex: 1;
-        }
-
-        .welcome {
-            margin-bottom: 30px;
-        }
-
-        .welcome h2 {
-            font-size: 28px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .welcome p {
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-
-        /* =====================================================
-           FORMS / CARDS
-        ====================================================== */
-
-        .teacher-form,
-        .teacher-list {
-            background: white;
-            border-radius: 16px;
-            padding: 25px 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid #e2e8f0;
-        }
-
-        .teacher-form h3,
-        .teacher-list h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 18px;
-            color: #0f172a;
-        }
-
-        label {
-            display: block;
-            font-weight: 500;
-            font-size: 14px;
-            margin: 14px 0 4px 0;
-            color: #334155;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            font-size: 15px;
-            background: #f8fafc;
-            transition: 0.2s;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-            background: white;
-        }
-
-
-        /* =====================================================
-           SAVE BUTTON
-        ====================================================== */
-
-        .save-btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 18px;
-            transition: 0.2s;
-            width: 100%;
-        }
-
-        .save-btn:hover {
-            background: #1d4ed8;
-            transform: scale(1.01);
-        }
-
-
-        /* =====================================================
-           CANCEL EDIT BUTTON
-        ====================================================== */
-
-        #cancelButton {
-            background: #e2e8f0;
-            color: #1e293b;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            width: 100%;
-            display: none;
-        }
-
-        #cancelButton:hover {
-            background: #cbd5e1;
-        }
-
-
-        /* =====================================================
-           FORM MESSAGE
-        ====================================================== */
-
-        #formMessage {
-            margin-top: 16px;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 500;
-            display: block;
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-
-
-        /* =====================================================
-           SEARCH
-        ====================================================== */
-
-        #searchStudent {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: 1px solid #cbd5e1;
-            font-size: 15px;
-        }
-
-
-        /* =====================================================
-           STUDENT CARDS
-        ====================================================== */
-
-        .teacher-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 20px 24px;
-            margin-bottom: 16px;
-            transition: 0.2s;
-        }
-
-        .teacher-card:hover {
-            border-color: #94a3b8;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-        }
-
-        .teacher-card h4 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 8px;
-        }
-
-        .teacher-card p {
-            color: #475569;
-            margin: 4px 0;
-            font-size: 15px;
-        }
-
-        .teacher-card button {
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 14px;
-            cursor: pointer;
-            margin: 6px 6px 6px 0;
-            transition: 0.2s;
-        }
-
-
-        /* =====================================================
-           EDIT BUTTON
-        ====================================================== */
-
-        .edit-class-button {
-            background: #fef3c7;
-            color: #b45309;
-        }
-
-        .edit-class-button:hover {
-            background: #fde68a;
-        }
-
-
-        /* =====================================================
-           DELETE BUTTON
-        ====================================================== */
-
-        .delete-class-button {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-
-        .delete-class-button:hover {
-            background: #fecaca;
-        }
-
-
-        /* =====================================================
-           DELETE CONFIRMATION MODAL
-        ====================================================== */
-
-        .delete-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.65);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .delete-modal.show {
-            display: flex;
-        }
-
-        .delete-modal-box {
-            width: 100%;
-            max-width: 420px;
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-            animation: deleteModalIn 0.2s ease;
-        }
-
-        @keyframes deleteModalIn {
-
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .delete-modal-icon {
-            font-size: 42px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .delete-modal-box h3 {
-            text-align: center;
-            font-size: 22px;
-            color: #991b1b;
-            margin-bottom: 15px;
-        }
-
-        .delete-modal-box p {
-            text-align: center;
-            color: #475569;
-            line-height: 1.5;
-            margin-bottom: 8px;
-        }
-
-        #deleteStudentName {
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        #deleteStudentAdmission {
-            font-weight: 600;
-            color: #475569;
-        }
-
-        .delete-modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 22px;
-        }
-
-        .delete-cancel-btn,
-        .delete-confirm-btn {
-            flex: 1;
-            border: none;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .delete-cancel-btn {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
-
-        .delete-cancel-btn:hover {
-            background: #cbd5e1;
-        }
-
-        .delete-confirm-btn {
-            background: #dc2626;
-            color: white;
-        }
-
-        .delete-confirm-btn:hover {
-            background: #b91c1c;
-        }
-
-        .delete-confirm-btn:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-        }
-
-
-        /* =====================================================
-           RESPONSIVE
-        ====================================================== */
-
-        @media (max-width: 600px) {
-
-            .topbar {
-                flex-direction: column;
-                align-items: stretch;
-                text-align: center;
-            }
-
-            .main-menu {
-                justify-content: center;
-            }
-
-            .teacher-form,
-            .teacher-list {
-                padding: 18px;
-            }
-
-            .delete-modal-box {
-                padding: 22px;
-            }
-
-            .delete-modal-buttons {
-                flex-direction: column;
-            }
-
-            .delete-cancel-btn,
-            .delete-confirm-btn {
-                width: 100%;
-            }
-        }
-
     </style>
-
 </head>
-
 
 <body>
 
+<header class="topbar">
 
-    <!-- =====================================================
-         TOP BAR
-    ====================================================== -->
+    <div>
+        <h1>My School</h1>
+        <p>School Information System</p>
+    </div>
 
-    <header class="topbar">
+    <div class="topbar-right">
 
-        <div>
-
-            <h1>My School</h1>
-
-            <p>
-                School Information System
-            </p>
-
-        </div>
+        <span id="userEmail"></span>
 
         <button
             type="button"
@@ -515,1795 +126,759 @@
             ←
         </button>
 
-    </header>
-
-
-    <!-- =====================================================
-         MAIN MENU
-    ====================================================== -->
-
-    <nav class="main-menu">
-
-        <a href="dashboard.html">
-            🏠 Dashboard
-        </a>
-
-        <a href="students.html" class="active">
-            👨‍🎓 Students
-        </a>
-
-        <a href="teachers.html">
-            👨‍🏫 Teachers
-        </a>
-
-        <a href="classes.html">
-            🏫 Classes
-        </a>
-
-        <a href="subjects.html">
-            📚 Subjects
-        </a>
-
-        <a href="attendance.html">
-            📋 Attendance
-        </a>
-
-        <a href="exams.html">
-            📝 Exams &amp; Marks
-        </a>
-
-        <a href="fees.html" id="feesLink">
-            💰 Fees
-        </a>
-
-        <a href="reports.html">
-            📊 Reports
-        </a>
-
-        <a href="#" id="settingsLink">
-            ⚙️ Settings
-        </a>
-
-    </nav>
-
-
-    <!-- =====================================================
-         MAIN CONTENT
-    ====================================================== -->
-
-    <main>
-
-
-        <!-- =================================================
-             WELCOME
-        ================================================== -->
-
-        <section class="welcome">
-
-            <h2>
-                👨‍🎓 Student Management
-            </h2>
-
-            <p>
-                Add, edit, search and manage students.
-            </p>
-
-        </section>
-
-
-        <!-- =================================================
-             ADD / EDIT STUDENT
-        ================================================== -->
-
-        <section class="teacher-form">
-
-            <h3 id="formTitle">
-                ➕ Add Student
-            </h3>
-
-            <form id="studentForm">
-
-                <input
-                    type="hidden"
-                    id="studentId">
-
-
-                <label for="admissionNo">
-                    Admission Number
-                </label>
-
-                <input
-                    type="text"
-                    id="admissionNo"
-                    placeholder="Example: ADM001"
-                    autocomplete="off"
-                    required>
-
-
-                <label for="studentName">
-                    Student Name
-                </label>
-
-                <input
-                    type="text"
-                    id="studentName"
-                    placeholder="Enter student's full name"
-                    autocomplete="name"
-                    required>
-
-
-                <label for="studentClass">
-                    Class
-                </label>
-
-                <select
-                    id="studentClass"
-                    required>
-
-                    <option value="">
-                        Loading classes...
-                    </option>
-
-                </select>
-
-
-                <button
-                    type="submit"
-                    class="save-btn"
-                    id="saveButton">
-
-                    ➕ Add Student
-
-                </button>
-
-
-                <button
-                    type="button"
-                    id="cancelButton">
-
-                    Cancel Edit
-
-                </button>
-
-            </form>
-
-
-            <p id="formMessage"></p>
-
-        </section>
-
-
-        <!-- =================================================
-             SEARCH
-        ================================================== -->
-
-        <section class="teacher-form">
-
-            <h3>
-                🔍 Search Students
-            </h3>
-
-            <input
-                type="search"
-                id="searchStudent"
-                placeholder="Search by admission number, name or class..."
-                autocomplete="off">
-
-        </section>
-
-
-        <!-- =================================================
-             STUDENT LIST
-        ================================================== -->
-
-        <section class="teacher-list">
-
-            <h3>
-                👨‍🎓 Students
-            </h3>
-
-            <div id="studentsContainer">
-                Loading students...
-            </div>
-
-        </section>
-
-    </main>
-
-
-    <!-- =====================================================
-         DELETE CONFIRMATION MODAL
-    ====================================================== -->
-
-    <div
-        id="deleteModal"
-        class="delete-modal">
-
-        <div class="delete-modal-box">
-
-
-            <div class="delete-modal-icon">
-                ⚠️
-            </div>
-
-
-            <h3>
-                Confirm Student Deletion
-            </h3>
-
-
-            <p>
-
-                Are you sure you want to delete
-
-                <span id="deleteStudentName">
-                </span>
-
-                ?
-
-            </p>
-
-
-            <p>
-
-                Admission No:
-
-                <span id="deleteStudentAdmission">
-                </span>
-
-            </p>
-
-
-            <div class="delete-modal-buttons">
-
-
-                <button
-                    type="button"
-                    class="delete-cancel-btn"
-                    id="deleteCancelButton">
-
-                    Cancel
-
-                </button>
-
-
-                <button
-                    type="button"
-                    class="delete-confirm-btn"
-                    id="deleteConfirmButton">
-
-                    🗑️ Delete Student
-
-                </button>
-
-
-            </div>
-
-        </div>
+        <button
+            type="button"
+            id="logoutButton"
+            onclick="logoutUser()">
+            Logout
+        </button>
 
     </div>
 
+</header>
+
+
+<nav class="main-menu">
+
+    <a href="dashboard.html">🏠 Dashboard</a>
+
+    <a href="students.html">👨‍🎓 Students</a>
+
+    <a href="teachers.html">👨‍🏫 Teachers</a>
+
+    <a href="classes.html">🏫 Classes</a>
+
+    <a href="subjects.html" class="active">📚 Subjects</a>
+
+    <a href="attendance.html">📋 Attendance</a>
+
+    <a href="exams.html">📝 Exams &amp; Marks</a>
+
+    <a href="fees.html">💰 Fees</a>
+
+    <a href="reports.html">📊 Reports</a>
+
+    <a href="#">⚙️ Settings</a>
+
+</nav>
+
+
+<main>
+
+    <section class="welcome">
+
+        <h2>📚 Subject Management</h2>
+
+        <p>
+            Add, edit, search and manage school subjects.
+        </p>
+
+    </section>
+
 
     <!-- =====================================================
-         JAVASCRIPT
+         ADD / EDIT SUBJECT
     ====================================================== -->
 
-    <script>
+    <section class="card">
 
-        "use strict";
+        <h3 id="formTitle">
+            ➕ Add Subject
+        </h3>
+
+        <form id="subjectForm">
+
+            <input
+                type="hidden"
+                id="subjectId">
+
+            <label for="subjectName">
+                Subject Name
+            </label>
+
+            <input
+                type="text"
+                id="subjectName"
+                placeholder="Example: Mathematics"
+                required>
+
+            <label for="subjectCode">
+                Subject Code
+            </label>
+
+            <input
+                type="text"
+                id="subjectCode"
+                placeholder="Example: MAT">
+
+            <button
+                type="submit"
+                class="save-btn"
+                id="saveButton">
+                ➕ Add Subject
+            </button>
+
+            <button
+                type="button"
+                id="cancelButton">
+                Cancel Edit
+            </button>
+
+        </form>
+
+        <p id="message"></p>
+
+    </section>
 
 
-        /* =====================================================
-           SUPABASE CONFIGURATION
-        ====================================================== */
+    <!-- =====================================================
+         SEARCH
+    ====================================================== -->
 
-        const SUPABASE_URL =
-            "https://aqrdzpvxfkatqwbfnbor.supabase.co";
+    <section class="card">
 
-        const SUPABASE_ANON_KEY =
-            "sb_publishable_5tdz7OcEe_XXKa-yhSe3zw_v7FDw0ON";
+        <h3>🔍 Search Subjects</h3>
 
+        <input
+            type="search"
+            id="searchSubject"
+            placeholder="Search subject or code..."
+            autocomplete="off">
 
-        let supabaseClient = null;
-
-        let allStudents = [];
-
-        let allClasses = [];
-
-        /*
-         * This variable stores ONLY the student currently
-         * selected for deletion.
-         */
-        let studentPendingDeletion = null;
+    </section>
 
 
-        /* =====================================================
-           DOM HELPER
-        ====================================================== */
+    <!-- =====================================================
+         SUBJECT LIST
+    ====================================================== -->
 
-        function getElement(id) {
+    <section class="card">
 
-            const element =
-                document.getElementById(id);
+        <h3>📚 Subjects</h3>
 
-            if (!element) {
+        <div id="subjectsContainer">
+            <div class="loading">
+                Loading subjects...
+            </div>
+        </div>
 
-                throw new Error(
-                    "Element not found: #" + id
-                );
+    </section>
 
+</main>
+
+
+<script>
+    "use strict";
+
+    const db = authClient;
+
+    let allSubjects = [];
+
+
+    /* =====================================================
+       HELPERS
+    ====================================================== */
+
+    function escapeHTML(value) {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    function showMessage(message, success = true) {
+
+        const box =
+            document.getElementById("message");
+
+        if (!box) return;
+
+        box.textContent = message;
+
+        box.style.display = "block";
+
+        box.style.color =
+            success ? "green" : "#b91c1c";
+
+        box.style.background =
+            success ? "#f0fdf4" : "#fef2f2";
+
+    }
+
+
+    function resetForm() {
+
+        document.getElementById("subjectForm").reset();
+
+        document.getElementById("subjectId").value = "";
+
+        document.getElementById("formTitle").textContent =
+            "➕ Add Subject";
+
+        document.getElementById("saveButton").textContent =
+            "➕ Add Subject";
+
+        document.getElementById("cancelButton").style.display =
+            "none";
+    }
+
+
+    /* =====================================================
+       LOAD USER
+    ====================================================== */
+
+    async function loadUser() {
+
+        const { data, error } =
+            await db.auth.getSession();
+
+        if (error || !data.session) {
+
+            window.location.replace("login.html");
+
+            return false;
+        }
+
+        const emailElement =
+            document.getElementById("userEmail");
+
+        if (emailElement) {
+
+            emailElement.textContent =
+                data.session.user.email || "Logged in";
+        }
+
+        return true;
+    }
+
+
+    /* =====================================================
+       LOAD SUBJECTS
+    ====================================================== */
+
+    async function loadSubjects() {
+
+        const container =
+            document.getElementById("subjectsContainer");
+
+        container.innerHTML =
+            '<div class="loading">Loading subjects...</div>';
+
+        try {
+
+            /*
+             * The logged-in user's session is automatically
+             * sent by Supabase with this request.
+             */
+
+            const { data, error } =
+                await db
+                    .from("subjects")
+                    .select("id,name,code,created_at")
+                    .order("name", {
+                        ascending: true
+                    });
+
+            if (error) {
+                throw error;
             }
 
-            return element;
-        }
+            allSubjects = data || [];
 
+            displaySubjects(allSubjects);
 
-        /* =====================================================
-           ESCAPE HTML
-        ====================================================== */
+        } catch (error) {
 
-        function escapeHTML(value) {
-
-            const text =
-                String(value ?? "");
-
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-
-        }
-
-
-        /* =====================================================
-           INITIALIZE SUPABASE
-        ====================================================== */
-
-        function initializeSupabase() {
-
-            try {
-
-                if (
-                    typeof window.supabase === "undefined" ||
-                    typeof window.supabase.createClient !== "function"
-                ) {
-
-                    throw new Error(
-                        "Supabase library failed to load."
-                    );
-
-                }
-
-                supabaseClient =
-                    window.supabase.createClient(
-                        SUPABASE_URL,
-                        SUPABASE_ANON_KEY
-                    );
-
-                return true;
-
-            } catch (error) {
-
-                console.error(
-                    "SUPABASE INITIALIZATION ERROR:",
-                    error
-                );
-
-                supabaseClient = null;
-
-                return false;
-            }
-        }
-
-
-        /* =====================================================
-           BACK BUTTON
-        ====================================================== */
-
-        function goBack() {
-
-            if (window.history.length > 1) {
-
-                window.history.back();
-
-            } else {
-
-                window.location.href =
-                    "index.html";
-
-            }
-        }
-
-
-        getElement("backButton")
-            .addEventListener(
-                "click",
-                goBack
+            console.error(
+                "SUBJECT LOAD ERROR:",
+                error
             );
 
-
-        /* =====================================================
-           FORM MESSAGE
-        ====================================================== */
-
-        function showMessage(
-            message,
-            success = true
-        ) {
-
-            const box =
-                document.getElementById(
-                    "formMessage"
-                );
-
-            if (!box) return;
-
-            box.textContent =
-                message;
-
-            box.style.color =
-                success ? "green" : "red";
-
-            box.style.background =
-                success
-                    ? "#f0fdf4"
-                    : "#fef2f2";
-        }
-
-
-        /* =====================================================
-           LOAD CLASSES
-        ====================================================== */
-
-        async function loadClasses() {
-
-            const select =
-                getElement("studentClass");
-
-            select.innerHTML =
-                '<option value="">Loading classes...</option>';
-
-
-            if (!supabaseClient) {
-
-                select.innerHTML =
-                    '<option value="">Supabase unavailable</option>';
-
-                return;
-            }
-
-
-            try {
-
-                const result =
-                    await supabaseClient
-                        .from("classes")
-                        .select("id,name,section")
-                        .order(
-                            "name",
-                            {
-                                ascending: true
-                            }
-                        );
-
-
-                if (result.error) {
-
-                    throw result.error;
-
-                }
-
-
-                allClasses =
-                    result.data || [];
-
-
-                select.innerHTML =
-                    '<option value="">Select class</option>';
-
-
-                allClasses.forEach(
-                    function(item) {
-
-                        const option =
-                            document.createElement(
-                                "option"
-                            );
-
-                        option.value =
-                            String(item.id);
-
-                        option.textContent =
-                            item.name +
-                            (
-                                item.section
-                                    ? " - " +
-                                      item.section
-                                    : ""
-                            );
-
-                        select.appendChild(
-                            option
-                        );
-
-                    }
-                );
-
-
-                if (allClasses.length === 0) {
-
-                    select.innerHTML =
-                        '<option value="">No classes found</option>';
-
-                    showMessage(
-                        "No classes have been created yet. Create a class first.",
-                        false
-                    );
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "CLASS LOAD ERROR:",
-                    error
-                );
-
-                select.innerHTML =
-                    '<option value="">Unable to load classes</option>';
-
-                showMessage(
-                    "Unable to load classes: " +
-                    error.message,
-                    false
-                );
-            }
-        }
-
-
-        /* =====================================================
-           GET CLASS NAME
-        ====================================================== */
-
-        function getClassName(classId) {
-
-            const classItem =
-                allClasses.find(
-                    function(item) {
-
-                        return String(item.id) ===
-                               String(classId);
-
-                    }
-                );
-
-
-            if (!classItem) {
-
-                return "Not assigned";
-
-            }
-
-
-            return classItem.name +
-                (
-                    classItem.section
-                        ? " - " +
-                          classItem.section
-                        : ""
-                );
-        }
-
-
-        /* =====================================================
-           LOAD STUDENTS
-        ====================================================== */
-
-        async function loadStudents() {
-
-            const container =
-                getElement(
-                    "studentsContainer"
-                );
-
-
-            container.innerHTML =
-                "<p>Loading students...</p>";
-
-
-            if (!supabaseClient) {
-
-                container.innerHTML = `
-
-                    <div
+            container.innerHTML = `
+                <div class="error-box">
+                    <strong>❌ Unable to load subjects</strong>
+                    <p style="margin-top:8px;">
+                        ${escapeHTML(error.message)}
+                    </p>
+
+                    <button
+                        type="button"
+                        id="retryButton"
                         style="
-                            padding:20px;
-                            text-align:center;
+                            margin-top:12px;
+                            padding:10px 18px;
+                            border:none;
+                            border-radius:8px;
+                            background:#2563eb;
+                            color:white;
+                            cursor:pointer;
                         ">
-
-                        <h3 style="color:red;">
-                            Supabase unavailable
-                        </h3>
-
-                        <p>
-                            Please check your internet
-                            connection and Supabase
-                            configuration.
-                        </p>
-
-                    </div>
-
-                `;
-
-                return;
-            }
-
-
-            try {
-
-                const result =
-                    await supabaseClient
-                        .from("students")
-                        .select(
-                            "id,admission_no,name,class_id,created_at"
-                        )
-                        .order(
-                            "name",
-                            {
-                                ascending: true
-                            }
-                        );
-
-
-                if (result.error) {
-
-                    throw result.error;
-
-                }
-
-
-                allStudents =
-                    result.data || [];
-
-
-                displayStudents(
-                    allStudents
-                );
-
-
-            } catch (error) {
-
-                console.error(
-                    "STUDENT LOAD ERROR:",
-                    error
-                );
-
-
-                container.innerHTML = `
-
-                    <div
-                        style="
-                            padding:20px;
-                            text-align:center;
-                        ">
-
-                        <h3 style="color:red;">
-                            Unable to load students
-                        </h3>
-
-                        <p>
-                            ${escapeHTML(error.message)}
-                        </p>
-
-                        <button
-                            type="button"
-                            id="retryStudentsButton"
-                            style="
-                                padding:10px 20px;
-                                border:none;
-                                background:#2563eb;
-                                color:white;
-                                border-radius:8px;
-                                cursor:pointer;
-                            ">
-
-                            🔄 Try Again
-
-                        </button>
-
-                    </div>
-
-                `;
-
-
-                const retryButton =
-                    document.getElementById(
-                        "retryStudentsButton"
-                    );
-
-
-                if (retryButton) {
-
-                    retryButton.addEventListener(
-                        "click",
-                        loadStudents
-                    );
-
-                }
-            }
-        }
-
-
-        /* =====================================================
-           DISPLAY STUDENTS
-        ====================================================== */
-
-        function displayStudents(
-            students
-        ) {
-
-            const container =
-                getElement(
-                    "studentsContainer"
-                );
-
-
-            if (
-                !students ||
-                students.length === 0
-            ) {
-
-                container.innerHTML = `
-
-                    <div
-                        style="
-                            padding:25px;
-                            text-align:center;
-                        ">
-
-                        <h3>
-                            👨‍🎓 No students found
-                        </h3>
-
-                        <p>
-                            Add your first student above.
-                        </p>
-
-                    </div>
-
-                `;
-
-                return;
-            }
-
-
-            container.innerHTML = "";
-
-
-            students.forEach(
-                function(student) {
-
-                    const card =
-                        document.createElement(
-                            "div"
-                        );
-
-                    card.className =
-                        "teacher-card";
-
-
-                    /* -------------------------------
-                       STUDENT NAME
-                    -------------------------------- */
-
-                    const title =
-                        document.createElement(
-                            "h4"
-                        );
-
-                    title.textContent =
-                        "👨‍🎓 " +
-                        (
-                            student.name ||
-                            "Unnamed Student"
-                        );
-
-
-                    /* -------------------------------
-                       ADMISSION NUMBER
-                    -------------------------------- */
-
-                    const admission =
-                        document.createElement(
-                            "p"
-                        );
-
-
-                    const admissionStrong =
-                        document.createElement(
-                            "strong"
-                        );
-
-                    admissionStrong.textContent =
-                        "Admission No: ";
-
-
-                    admission.appendChild(
-                        admissionStrong
-                    );
-
-
-                    admission.appendChild(
-                        document.createTextNode(
-                            student.admission_no ||
-                            "N/A"
-                        )
-                    );
-
-
-                    /* -------------------------------
-                       CLASS
-                    -------------------------------- */
-
-                    const classParagraph =
-                        document.createElement(
-                            "p"
-                        );
-
-
-                    const classStrong =
-                        document.createElement(
-                            "strong"
-                        );
-
-                    classStrong.textContent =
-                        "Class: ";
-
-
-                    classParagraph.appendChild(
-                        classStrong
-                    );
-
-
-                    classParagraph.appendChild(
-                        document.createTextNode(
-                            getClassName(
-                                student.class_id
-                            )
-                        )
-                    );
-
-
-                    /* -------------------------------
-                       EDIT BUTTON
-                    -------------------------------- */
-
-                    const editButton =
-                        document.createElement(
-                            "button"
-                        );
-
-                    editButton.type =
-                        "button";
-
-                    editButton.textContent =
-                        "✏️ Edit";
-
-                    editButton.className =
-                        "edit-class-button";
-
-
-                    editButton.addEventListener(
-                        "click",
-                        function() {
-
-                            editStudent(
-                                student.id
-                            );
-
-                        }
-                    );
-
-
-                    /* -------------------------------
-                       DELETE BUTTON
-                    -------------------------------- */
-
-                    const deleteButton =
-                        document.createElement(
-                            "button"
-                        );
-
-                    deleteButton.type =
-                        "button";
-
-                    deleteButton.textContent =
-                        "🗑️ Delete";
-
-                    deleteButton.className =
-                        "delete-class-button";
-
-
-                    /*
-                     * IMPORTANT:
-                     * Pass the exact ID belonging
-                     * to this card.
-                     */
-
-                    deleteButton.addEventListener(
-                        "click",
-                        function() {
-
-                            deleteStudent(
-                                student.id
-                            );
-
-                        }
-                    );
-
-
-                    /* -------------------------------
-                       BUILD CARD
-                    -------------------------------- */
-
-                    card.appendChild(
-                        title
-                    );
-
-                    card.appendChild(
-                        admission
-                    );
-
-                    card.appendChild(
-                        classParagraph
-                    );
-
-                    card.appendChild(
-                        editButton
-                    );
-
-                    card.appendChild(
-                        deleteButton
-                    );
-
-
-                    container.appendChild(
-                        card
-                    );
-
-                }
-            );
-        }
-
-
-        /* =====================================================
-           ADD / UPDATE STUDENT
-        ====================================================== */
-
-        getElement("studentForm")
-            .addEventListener(
-                "submit",
-                async function(event) {
-
-                    event.preventDefault();
-
-
-                    const id =
-                        getElement(
-                            "studentId"
-                        ).value;
-
-
-                    const admissionNo =
-                        getElement(
-                            "admissionNo"
-                        ).value.trim();
-
-
-                    const name =
-                        getElement(
-                            "studentName"
-                        ).value.trim();
-
-
-                    const classId =
-                        getElement(
-                            "studentClass"
-                        ).value;
-
-
-                    /* -------------------------------
-                       VALIDATION
-                    -------------------------------- */
-
-                    if (!admissionNo) {
-
-                        showMessage(
-                            "Please enter an admission number.",
-                            false
-                        );
-
-                        return;
-                    }
-
-
-                    if (!name) {
-
-                        showMessage(
-                            "Please enter the student's name.",
-                            false
-                        );
-
-                        return;
-                    }
-
-
-                    if (!classId) {
-
-                        showMessage(
-                            "Please select a class.",
-                            false
-                        );
-
-                        return;
-                    }
-
-
-                    if (!supabaseClient) {
-
-                        showMessage(
-                            "Supabase is not available.",
-                            false
-                        );
-
-                        return;
-                    }
-
-
-                    try {
-
-                        let result;
-
-
-                        /* -------------------------------
-                           UPDATE
-                        -------------------------------- */
-
-                        if (id) {
-
-                            result =
-                                await supabaseClient
-                                    .from("students")
-                                    .update({
-
-                                        admission_no:
-                                            admissionNo,
-
-                                        name:
-                                            name,
-
-                                        class_id:
-                                            classId
-
-                                    })
-                                    .eq(
-                                        "id",
-                                        id
-                                    );
-
-
-                            if (result.error) {
-
-                                throw result.error;
-
-                            }
-
-
-                            showMessage(
-                                "✅ Student updated successfully!",
-                                true
-                            );
-
-
-                        }
-
-                        /* -------------------------------
-                           INSERT
-                        -------------------------------- */
-
-                        else {
-
-                            result =
-                                await supabaseClient
-                                    .from("students")
-                                    .insert([{
-
-                                        admission_no:
-                                            admissionNo,
-
-                                        name:
-                                            name,
-
-                                        class_id:
-                                            classId
-
-                                    }]);
-
-
-                            if (result.error) {
-
-                                throw result.error;
-
-                            }
-
-
-                            showMessage(
-                                "✅ Student added successfully!",
-                                true
-                            );
-
-                        }
-
-
-                        /* -------------------------------
-                           RESET FORM
-                        -------------------------------- */
-
-                        getElement(
-                            "studentForm"
-                        ).reset();
-
-
-                        getElement(
-                            "studentId"
-                        ).value = "";
-
-
-                        getElement(
-                            "formTitle"
-                        ).textContent =
-                            "➕ Add Student";
-
-
-                        getElement(
-                            "saveButton"
-                        ).textContent =
-                            "➕ Add Student";
-
-
-                        getElement(
-                            "cancelButton"
-                        ).style.display =
-                            "none";
-
-
-                        /* -------------------------------
-                           RELOAD STUDENTS
-                        -------------------------------- */
-
-                        await loadStudents();
-
-
-                    } catch (error) {
-
-                        console.error(
-                            "SAVE ERROR:",
-                            error
-                        );
-
-
-                        showMessage(
-                            "❌ Error saving student: " +
-                            error.message,
-                            false
-                        );
-                    }
-
-                }
-            );
-
-
-        /* =====================================================
-           EDIT STUDENT
-        ====================================================== */
-
-        function editStudent(
-            studentId
-        ) {
-
-            const student =
-                allStudents.find(
-                    function(item) {
-
-                        return String(item.id) ===
-                               String(studentId);
-
-                    }
-                );
-
-
-            if (!student) {
-
-                showMessage(
-                    "Student not found.",
-                    false
-                );
-
-                return;
-            }
-
-
-            getElement(
-                "studentId"
-            ).value =
-                student.id;
-
-
-            getElement(
-                "admissionNo"
-            ).value =
-                student.admission_no || "";
-
-
-            getElement(
-                "studentName"
-            ).value =
-                student.name || "";
-
-
-            getElement(
-                "studentClass"
-            ).value =
-                student.class_id || "";
-
-
-            getElement(
-                "formTitle"
-            ).textContent =
-                "✏️ Edit Student";
-
-
-            getElement(
-                "saveButton"
-            ).textContent =
-                "💾 Update Student";
-
-
-            getElement(
-                "cancelButton"
-            ).style.display =
-                "inline-block";
-
-
-            showMessage(
-                "✏️ Editing student. Click Update to save.",
-                true
-            );
-
+                        🔄 Try Again
+                    </button>
+                </div>
+            `;
 
             document
-                .querySelector(
-                    ".teacher-form"
-                )
-                .scrollIntoView({
-                    behavior: "smooth"
-                });
+                .getElementById("retryButton")
+                .addEventListener(
+                    "click",
+                    loadSubjects
+                );
+        }
+    }
 
+
+    /* =====================================================
+       DISPLAY SUBJECTS
+    ====================================================== */
+
+    function displaySubjects(subjects) {
+
+        const container =
+            document.getElementById("subjectsContainer");
+
+        if (!subjects || subjects.length === 0) {
+
+            container.innerHTML = `
+                <div class="empty">
+                    <h3>📚 No subjects found</h3>
+                    <p style="margin-top:8px;">
+                        Add your first subject above.
+                    </p>
+                </div>
+            `;
+
+            return;
         }
 
+        container.innerHTML = "";
 
-        /* =====================================================
-           CANCEL EDIT
-        ====================================================== */
+        subjects.forEach(function (subject) {
 
-        getElement(
-            "cancelButton"
-        ).addEventListener(
-            "click",
-            function() {
+            const card =
+                document.createElement("div");
 
-                getElement(
-                    "studentForm"
-                ).reset();
+            card.className =
+                "subject-card";
 
 
-                getElement(
-                    "studentId"
-                ).value = "";
+            const title =
+                document.createElement("h4");
+
+            title.textContent =
+                "📚 " +
+                (subject.name || "Unnamed Subject");
 
 
-                getElement(
-                    "formTitle"
-                ).textContent =
-                    "➕ Add Student";
+            const code =
+                document.createElement("p");
+
+            code.innerHTML =
+                "<strong>Code:</strong> " +
+                escapeHTML(subject.code || "N/A");
 
 
-                getElement(
-                    "saveButton"
-                ).textContent =
-                    "➕ Add Student";
+            const editButton =
+                document.createElement("button");
 
+            editButton.type = "button";
 
-                getElement(
-                    "cancelButton"
-                ).style.display =
-                    "none";
+            editButton.textContent =
+                "✏️ Edit";
 
+            editButton.className =
+                "edit-button";
 
-                getElement(
-                    "formMessage"
-                ).textContent = "";
-
-
-                getElement(
-                    "formMessage"
-                ).style.background =
-                    "#f1f5f9";
-
-            }
-        );
-
-
-        /* =====================================================
-           OPEN DELETE CONFIRMATION
-        ====================================================== */
-
-        function deleteStudent(
-            studentId
-        ) {
-
-            /*
-             * Find the exact student that belongs
-             * to the clicked Delete button.
-             */
-
-            const student =
-                allStudents.find(
-                    function(item) {
-
-                        return String(item.id) ===
-                               String(studentId);
-
-                    }
-                );
-
-
-            if (!student) {
-
-                showMessage(
-                    "Student not found.",
-                    false
-                );
-
-                return;
-            }
-
-
-            /*
-             * Store the exact student.
-             */
-
-            studentPendingDeletion =
-                student;
-
-
-            /*
-             * Put that student's information
-             * into the confirmation window.
-             */
-
-            getElement(
-                "deleteStudentName"
-            ).textContent =
-                student.name ||
-                "Unnamed Student";
-
-
-            getElement(
-                "deleteStudentAdmission"
-            ).textContent =
-                student.admission_no ||
-                "N/A";
-
-
-            /*
-             * Open modal.
-             */
-
-            getElement(
-                "deleteModal"
-            ).classList.add(
-                "show"
+            editButton.addEventListener(
+                "click",
+                function () {
+                    editSubject(subject);
+                }
             );
 
-        }
+
+            const deleteButton =
+                document.createElement("button");
+
+            deleteButton.type = "button";
+
+            deleteButton.textContent =
+                "🗑️ Delete";
+
+            deleteButton.className =
+                "delete-button";
+
+            deleteButton.addEventListener(
+                "click",
+                function () {
+                    deleteSubject(subject.id);
+                }
+            );
 
 
-        /* =====================================================
-           CANCEL DELETE
-        ====================================================== */
+            card.appendChild(title);
 
-        getElement(
-            "deleteCancelButton"
-        ).addEventListener(
-            "click",
-            function() {
+            card.appendChild(code);
 
-                /*
-                 * Clear selected student.
-                 */
+            card.appendChild(editButton);
 
-                studentPendingDeletion =
-                    null;
+            card.appendChild(deleteButton);
+
+            container.appendChild(card);
+        });
+    }
 
 
-                /*
-                 * Close modal.
-                 */
+    /* =====================================================
+       ADD / UPDATE SUBJECT
+    ====================================================== */
 
-                getElement(
-                    "deleteModal"
-                ).classList.remove(
-                    "show"
-                );
+    document
+        .getElementById("subjectForm")
+        .addEventListener(
+            "submit",
+            async function (event) {
 
-            }
-        );
+                event.preventDefault();
+
+                const id =
+                    document.getElementById(
+                        "subjectId"
+                    ).value;
+
+                const name =
+                    document.getElementById(
+                        "subjectName"
+                    ).value.trim();
+
+                const code =
+                    document.getElementById(
+                        "subjectCode"
+                    ).value.trim();
 
 
-        /* =====================================================
-           CONFIRM DELETE
-        ====================================================== */
+                if (!name) {
 
-        getElement(
-            "deleteConfirmButton"
-        ).addEventListener(
-            "click",
-            async function() {
-
-                /*
-                 * Make sure a student was selected.
-                 */
-
-                if (!studentPendingDeletion) {
-
-                    getElement(
-                        "deleteModal"
-                    ).classList.remove(
-                        "show"
+                    showMessage(
+                        "Please enter the subject name.",
+                        false
                     );
 
                     return;
                 }
 
 
-                /*
-                 * Save exact ID and name
-                 * before clearing anything.
-                 */
-
-                const studentId =
-                    studentPendingDeletion.id;
-
-
-                const studentName =
-                    studentPendingDeletion.name ||
-                    "Student";
-
-
-                const deleteButton =
-                    getElement(
-                        "deleteConfirmButton"
+                const saveButton =
+                    document.getElementById(
+                        "saveButton"
                     );
 
+                saveButton.disabled = true;
 
-                /*
-                 * Prevent double clicking.
-                 */
-
-                deleteButton.disabled =
-                    true;
-
-                deleteButton.textContent =
-                    "Deleting...";
+                saveButton.textContent =
+                    id
+                        ? "Saving changes..."
+                        : "Adding subject...";
 
 
                 try {
 
-                    if (!supabaseClient) {
+                    const subjectData = {
+                        name: name,
+                        code: code || null
+                    };
 
-                        throw new Error(
-                            "Supabase is not available."
+
+                    if (id) {
+
+                        const { error } =
+                            await db
+                                .from("subjects")
+                                .update(subjectData)
+                                .eq("id", id);
+
+                        if (error) {
+                            throw error;
+                        }
+
+                        showMessage(
+                            "✅ Subject updated successfully!"
                         );
 
+                    } else {
+
+                        const { error } =
+                            await db
+                                .from("subjects")
+                                .insert(subjectData);
+
+                        if (error) {
+                            throw error;
+                        }
+
+                        showMessage(
+                            "✅ Subject added successfully!"
+                        );
                     }
 
 
-                    /*
-                     * Delete ONLY the selected
-                     * student's ID.
-                     */
+                    resetForm();
 
-                    const result =
-                        await supabaseClient
-                            .from("students")
-                            .delete()
-                            .eq(
-                                "id",
-                                studentId
-                            );
-
-
-                    if (result.error) {
-
-                        throw result.error;
-
-                    }
-
-
-                    /*
-                     * Close modal.
-                     */
-
-                    getElement(
-                        "deleteModal"
-                    ).classList.remove(
-                        "show"
-                    );
-
-
-                    /*
-                     * Clear pending student.
-                     */
-
-                    studentPendingDeletion =
-                        null;
-
-
-                    /*
-                     * Restore button.
-                     */
-
-                    deleteButton.disabled =
-                        false;
-
-                    deleteButton.textContent =
-                        "🗑️ Delete Student";
-
-
-                    /*
-                     * Show success message.
-                     */
-
-                    showMessage(
-                        "🗑️ " +
-                        studentName +
-                        " was deleted successfully.",
-                        true
-                    );
-
-
-                    /*
-                     * Reload student list.
-                     */
-
-                    await loadStudents();
-
+                    await loadSubjects();
 
                 } catch (error) {
 
                     console.error(
-                        "DELETE ERROR:",
+                        "SUBJECT SAVE ERROR:",
                         error
                     );
 
-
-                    deleteButton.disabled =
-                        false;
-
-                    deleteButton.textContent =
-                        "🗑️ Delete Student";
-
-
                     showMessage(
-                        "❌ Error deleting student: " +
+                        "❌ Error saving subject: " +
                         error.message,
                         false
                     );
 
-                }
+                } finally {
 
+                    saveButton.disabled = false;
+
+                    if (
+                        !document.getElementById(
+                            "subjectId"
+                        ).value
+                    ) {
+
+                        saveButton.textContent =
+                            "➕ Add Subject";
+                    }
+                }
             }
         );
 
 
-        /* =====================================================
-           CLOSE MODAL BY CLICKING OUTSIDE
-        ====================================================== */
+    /* =====================================================
+       EDIT SUBJECT
+    ====================================================== */
 
-        getElement(
-            "deleteModal"
-        ).addEventListener(
+    function editSubject(subject) {
+
+        document.getElementById(
+            "subjectId"
+        ).value = subject.id;
+
+        document.getElementById(
+            "subjectName"
+        ).value = subject.name || "";
+
+        document.getElementById(
+            "subjectCode"
+        ).value = subject.code || "";
+
+        document.getElementById(
+            "formTitle"
+        ).textContent =
+            "✏️ Edit Subject";
+
+        document.getElementById(
+            "saveButton"
+        ).textContent =
+            "💾 Save Changes";
+
+        document.getElementById(
+            "cancelButton"
+        ).style.display =
+            "block";
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+
+    /* =====================================================
+       CANCEL EDIT
+    ====================================================== */
+
+    document
+        .getElementById("cancelButton")
+        .addEventListener(
             "click",
-            function(event) {
+            function () {
 
-                /*
-                 * Only close if the dark background
-                 * itself was clicked.
-                 */
+                resetForm();
 
-                if (
-                    event.target ===
-                    this
-                ) {
-
-                    studentPendingDeletion =
-                        null;
-
-
-                    this.classList.remove(
-                        "show"
+                const message =
+                    document.getElementById(
+                        "message"
                     );
 
-                }
-
+                message.style.display =
+                    "none";
             }
         );
 
 
-        /* =====================================================
-           CLOSE MODAL WITH ESCAPE KEY
-        ====================================================== */
+    /* =====================================================
+       DELETE SUBJECT
+    ====================================================== */
 
-        document.addEventListener(
-            "keydown",
-            function(event) {
+    async function deleteSubject(id) {
 
-                if (
-                    event.key === "Escape"
-                ) {
+        const subject =
+            allSubjects.find(function (item) {
+                return String(item.id) === String(id);
+            });
 
-                    studentPendingDeletion =
-                        null;
+        const name =
+            subject?.name || "this subject";
 
 
-                    getElement(
-                        "deleteModal"
-                    ).classList.remove(
-                        "show"
-                    );
+        if (
+            !confirm(
+                "Are you sure you want to delete " +
+                name +
+                "?"
+            )
+        ) {
+            return;
+        }
 
-                }
 
+        try {
+
+            const { error } =
+                await db
+                    .from("subjects")
+                    .delete()
+                    .eq("id", id);
+
+            if (error) {
+                throw error;
             }
-        );
+
+            showMessage(
+                "✅ Subject deleted successfully!"
+            );
+
+            await loadSubjects();
+
+        } catch (error) {
+
+            console.error(
+                "SUBJECT DELETE ERROR:",
+                error
+            );
+
+            showMessage(
+                "❌ Error deleting subject: " +
+                error.message,
+                false
+            );
+        }
+    }
 
 
-        /* =====================================================
-           SEARCH STUDENTS
-        ====================================================== */
+    /* =====================================================
+       SEARCH
+    ====================================================== */
 
-        getElement(
-            "searchStudent"
-        ).addEventListener(
+    document
+        .getElementById("searchSubject")
+        .addEventListener(
             "input",
-            function() {
+            function () {
 
                 const search =
                     this.value
-                        .toLowerCase()
-                        .trim();
-
-
-                /*
-                 * If search is empty,
-                 * display everything.
-                 */
+                        .trim()
+                        .toLowerCase();
 
                 if (!search) {
 
-                    displayStudents(
-                        allStudents
+                    displaySubjects(
+                        allSubjects
                     );
 
                     return;
                 }
 
 
-                /*
-                 * Filter students.
-                 */
-
                 const filtered =
-                    allStudents.filter(
-                        function(student) {
+                    allSubjects.filter(
+                        function (subject) {
 
-                            const className =
-                                getClassName(
-                                    student.class_id
-                                );
+                            const name =
+                                String(
+                                    subject.name || ""
+                                ).toLowerCase();
 
+                            const code =
+                                String(
+                                    subject.code || ""
+                                ).toLowerCase();
 
                             return (
-
-                                String(
-                                    student.admission_no ||
-                                    ""
-                                )
-                                .toLowerCase()
-                                .includes(search)
-
-
-                                ||
-
-                                String(
-                                    student.name ||
-                                    ""
-                                )
-                                .toLowerCase()
-                                .includes(search)
-
-
-                                ||
-
-                                String(
-                                    className
-                                )
-                                .toLowerCase()
-                                .includes(search)
-
+                                name.includes(search) ||
+                                code.includes(search)
                             );
-
                         }
                     );
 
 
-                displayStudents(
-                    filtered
-                );
-
+                displaySubjects(filtered);
             }
         );
 
 
-        /* =====================================================
-           INITIALIZE PAGE
-        ====================================================== */
+    /* =====================================================
+       BACK BUTTON
+    ====================================================== */
 
-        async function initializePage() {
+    document
+        .getElementById("backButton")
+        .addEventListener(
+            "click",
+            function () {
 
-            const initialized =
-                initializeSupabase();
+                if (window.history.length > 1) {
+
+                    window.history.back();
+
+                } else {
+
+                    window.location.href =
+                        "index.html";
+                }
+            }
+        );
 
 
-            if (!initialized) {
+    /* =====================================================
+       INITIALIZE PAGE
+    ====================================================== */
 
-                showMessage(
-                    "Unable to initialize Supabase.",
-                    false
-                );
+    document.addEventListener(
+        "DOMContentLoaded",
+        async function () {
 
+            const loggedIn =
+                await loadUser();
+
+            if (!loggedIn) {
                 return;
             }
 
-
-            await loadClasses();
-
-            await loadStudents();
-
+            await loadSubjects();
         }
+    );
 
-
-        /* =====================================================
-           START APPLICATION
-        ====================================================== */
-
-        initializePage();
-
-    </script>
+</script>
 
 </body>
-
 </html>
