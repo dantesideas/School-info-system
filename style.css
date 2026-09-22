@@ -379,3 +379,131 @@ th {
         grid-template-columns: 1fr;
     }
 }
+/* =====================================================
+   SUBJECTS PAGE SPECIFIC STYLES
+====================================================== */
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#userEmail {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+#logoutButton {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#logoutButton:hover {
+    background: #b91c1c;
+}
+
+#logoutButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.card h3 {
+    font-size: 20px;
+    color: #0f172a;
+    margin-bottom: 18px;
+}
+
+.subject-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+}
+
+.subject-card:hover {
+    background: white;
+    border-color: #94a3b8;
+}
+
+.subject-card h4 {
+    font-size: 20px;
+    color: #0f172a;
+    margin-bottom: 8px;
+}
+
+.subject-card p {
+    color: #475569;
+    margin: 5px 0;
+}
+
+.subject-card button {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 8px 6px 0 0;
+}
+
+.edit-button {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.edit-button:hover {
+    background: #fde68a;
+}
+
+.delete-button {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.delete-button:hover {
+    background: #fecaca;
+}
+
+.loading {
+    padding: 25px;
+    text-align: center;
+    color: #64748b;
+}
+
+.empty {
+    padding: 25px;
+    text-align: center;
+    color: #64748b;
+}
+
+.error-box {
+    padding: 20px;
+    background: #fef2f2;
+    color: #b91c1c;
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+}
+
+/* Mobile adjustments for Subjects */
+@media (max-width: 600px) {
+    .topbar-right {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
