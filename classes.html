@@ -1,3 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Class Management - School Information System</title>
+
+    <!-- =====================================================
+         THIS IS THE CRITICAL FIX: SUPABASE CDN LIBRARY 
+    ====================================================== -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Basic styling to make the page usable. 
+           Replace this with your own CSS file if you have one. */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f0f4f9; color: #1e293b; padding-bottom: 40px; }
+        
+        .topbar { background: linear-gradient(135deg, #0f2b5b, #1a4a8a); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 14px 14px; }
+        .topbar h1 { font-size: 20px; margin-bottom: 4px; }
+        .topbar p { font-size: 12px; opacity: 0.9; }
+        #backButton { background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        
+        .main-menu { display: flex; overflow-x: auto; background: white; padding: 10px; gap: 10px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .main-menu a { text-decoration: none; color: #475569; font-size: 13px; padding: 8px 12px; border-radius: 6px; background: #f8fafc; }
+        .main-menu a.active { background: #eff6ff; color: #2563eb; font-weight: bold; }
+        
+        main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
+        .welcome { margin-bottom: 15px; }
+        .welcome h2 { color: #0f2b5b; font-size: 22px; }
+        .welcome p { color: #64748b; font-size: 14px; }
+        
+        .teacher-form { background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 7px rgba(0,0,0,0.05); }
+        .teacher-form h3 { margin-bottom: 12px; color: #0f2b5b; font-size: 17px; }
+        .teacher-form label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; color: #475569; }
+        .teacher-form input, .teacher-form select { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+        
+        .save-btn { background: #2563eb; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 8px; }
+        .save-btn:hover { background: #1d4ed8; }
+        #cancelButton { background: #e2e8f0; color: #475569; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; width: 100%; display: none; }
+        
+        #message { display: none; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+        
+        .teacher-list { background: white; padding: 18px; border-radius: 12px; box-shadow: 0 2px 7px rgba(0,0,0,0.05); }
+        .teacher-list h3 { margin-bottom: 12px; color: #0f2b5b; font-size: 17px; }
+        .teacher-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin-bottom: 12px; background: #f8fafc; }
+        .teacher-card h4 { color: #0f2b5b; margin-bottom: 8px; font-size: 16px; }
+        .teacher-card p { font-size: 14px; color: #475569; margin-bottom: 5px; }
+        .teacher-card button { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; margin-right: 5px; margin-top: 5px; }
+        .view-students-button { background: #0ea5e9; color: white; }
+        .edit-class-button { background: #f59e0b; color: white; }
+        .delete-class-button { background: #ef4444; color: white; }
+    </style>
+</head>
+
+<body>
+
+<!-- =====================================================
+     YOUR ORIGINAL HTML CODE STARTS HERE
+====================================================== -->
+
 <header class="topbar">
     <div>
         <h1>My School</h1>
@@ -101,6 +164,9 @@
 
 </main>
 
+<!-- =====================================================
+     YOUR ORIGINAL JAVASCRIPT STARTS HERE
+====================================================== -->
 <script>
 
     /* =====================================================
